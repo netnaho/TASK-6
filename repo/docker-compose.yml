@@ -1,0 +1,68 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: nutrideclare-postgres
+    environment:
+      POSTGRES_DB: nutrideclare
+      POSTGRES_USER: nutrideclare
+      POSTGRES_PASSWORD: nutrideclare
+    ports:
+      - "55432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U nutrideclare -d nutrideclare"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    build:
+      context: ./backend
+    container_name: nutrideclare-backend
+    environment:
+      ENVIRONMENT: ${ENVIRONMENT:-development}
+      POSTGRES_SERVER: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_USER: nutrideclare
+      POSTGRES_PASSWORD: nutrideclare
+      POSTGRES_DB: nutrideclare
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY:-replace-me-with-long-secret-key}
+      JWT_REFRESH_SECRET_KEY: ${JWT_REFRESH_SECRET_KEY:-replace-me-refresh-secret-key}
+      REFRESH_TOKEN_PEPPER: ${REFRESH_TOKEN_PEPPER:-replace-me-refresh-pepper}
+      ENCRYPTION_KEY: ${ENCRYPTION_KEY:-j8nQ3W-c_0LxgVe2B1u2Vt1n2HzAit5mfS_qwXcqfaQ=}
+      DB_ENCRYPTION_ENABLED: ${DB_ENCRYPTION_ENABLED:-true}
+      DB_ENCRYPTION_KEY: ${DB_ENCRYPTION_KEY:-}
+      CAPTCHA_SECRET: ${CAPTCHA_SECRET:-replace-me-captcha-secret}
+      STORAGE_ROOT: /var/lib/nutrideclare/storage
+    ports:
+      - "8000:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - file_storage:/var/lib/nutrideclare/storage
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:8000/health')\""]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+
+  frontend:
+    build:
+      context: ./frontend
+    container_name: nutrideclare-frontend
+    ports:
+      - "4173:4173"
+    depends_on:
+      backend:
+        condition: service_started
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1:4173 || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  postgres_data:
+  file_storage:

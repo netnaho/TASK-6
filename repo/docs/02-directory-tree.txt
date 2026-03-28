@@ -1,0 +1,211 @@
+.
+|-- API_tests/
+|   |-- README.md
+|   |-- conftest.py
+|   |-- test_auth_api.py
+|   |-- test_profile_api.py
+|   |-- test_plan_versions_api.py
+|   |-- test_declaration_lifecycle_api.py
+|   |-- test_reviewer_corrections_api.py
+|   |-- test_delivery_downloads_api.py
+|   |-- test_acceptance_api.py
+|   |-- test_notifications_api.py
+|   |-- test_import_export_api.py
+|   |-- test_admin_api.py
+|   `-- test_audit_api.py
+|-- backend/
+|   |-- Dockerfile
+|   |-- alembic.ini
+|   |-- app/
+|   |   |-- __init__.py
+|   |   |-- main.py
+|   |   |-- api/
+|   |   |   |-- __init__.py
+|   |   |   |-- deps.py
+|   |   |   |-- router.py
+|   |   |   `-- v1/
+|   |   |       |-- __init__.py
+|   |   |       |-- auth.py
+|   |   |       |-- users.py
+|   |   |       |-- profiles.py
+|   |   |       |-- plans.py
+|   |   |       |-- declarations.py
+|   |   |       |-- reviews.py
+|   |   |       |-- deliveries.py
+|   |   |       |-- downloads.py
+|   |   |       |-- notifications.py
+|   |   |       |-- imports_exports.py
+|   |   |       |-- audit.py
+|   |   |       `-- admin.py
+|   |   |-- core/
+|   |   |   |-- __init__.py
+|   |   |   |-- config.py
+|   |   |   |-- constants.py
+|   |   |   |-- exceptions.py
+|   |   |   |-- logging.py
+|   |   |   `-- responses.py
+|   |   |-- db/
+|   |   |   |-- __init__.py
+|   |   |   |-- base.py
+|   |   |   |-- session.py
+|   |   |   `-- seed.py
+|   |   |-- jobs/
+|   |   |   |-- __init__.py
+|   |   |   |-- scheduler.py
+|   |   |   |-- search_index.py
+|   |   |   |-- reviewer_stats.py
+|   |   |   |-- token_cleanup.py
+|   |   |   `-- notification_cleanup.py
+|   |   |-- models/
+|   |   |   |-- __init__.py
+|   |   |   |-- user.py
+|   |   |   |-- auth.py
+|   |   |   |-- profile.py
+|   |   |   |-- plan.py
+|   |   |   |-- declaration.py
+|   |   |   |-- review.py
+|   |   |   |-- delivery.py
+|   |   |   |-- notification.py
+|   |   |   |-- import_export.py
+|   |   |   |-- audit.py
+|   |   |   |-- scheduler.py
+|   |   |   `-- settings.py
+|   |   |-- repositories/
+|   |   |   |-- __init__.py
+|   |   |   |-- user_repository.py
+|   |   |   |-- profile_repository.py
+|   |   |   |-- plan_repository.py
+|   |   |   |-- declaration_repository.py
+|   |   |   |-- review_repository.py
+|   |   |   |-- delivery_repository.py
+|   |   |   |-- notification_repository.py
+|   |   |   |-- import_export_repository.py
+|   |   |   `-- audit_repository.py
+|   |   |-- schemas/
+|   |   |   |-- __init__.py
+|   |   |   |-- common.py
+|   |   |   |-- auth.py
+|   |   |   |-- users.py
+|   |   |   |-- profiles.py
+|   |   |   |-- plans.py
+|   |   |   |-- declarations.py
+|   |   |   |-- reviews.py
+|   |   |   |-- deliveries.py
+|   |   |   |-- notifications.py
+|   |   |   |-- imports_exports.py
+|   |   |   |-- audit.py
+|   |   |   `-- admin.py
+|   |   |-- security/
+|   |   |   |-- __init__.py
+|   |   |   |-- passwords.py
+|   |   |   |-- tokens.py
+|   |   |   |-- encryption.py
+|   |   |   |-- captcha.py
+|   |   |   `-- permissions.py
+|   |   |-- services/
+|   |   |   |-- __init__.py
+|   |   |   |-- auth_service.py
+|   |   |   |-- user_service.py
+|   |   |   |-- profile_service.py
+|   |   |   |-- plan_service.py
+|   |   |   |-- versioning_service.py
+|   |   |   |-- declaration_service.py
+|   |   |   |-- review_service.py
+|   |   |   |-- delivery_service.py
+|   |   |   |-- download_service.py
+|   |   |   |-- notification_service.py
+|   |   |   |-- import_export_service.py
+|   |   |   |-- audit_service.py
+|   |   |   `-- admin_service.py
+|   |   |-- storage/
+|   |   |   |-- __init__.py
+|   |   |   |-- file_manager.py
+|   |   |   |-- pdf_generator.py
+|   |   |   `-- checksum.py
+|   |   `-- utils/
+|   |       |-- __init__.py
+|   |       |-- datetime.py
+|   |       |-- diffs.py
+|   |       `-- pagination.py
+|   |-- migrations/
+|   |   |-- env.py
+|   |   |-- script.py.mako
+|   |   `-- versions/
+|   |-- requirements.txt
+|   `-- README.md
+|-- docker-compose.yml
+|-- frontend/
+|   |-- Dockerfile
+|   |-- index.html
+|   |-- nginx.conf
+|   |-- package.json
+|   |-- tsconfig.json
+|   |-- vite.config.ts
+|   |-- src/
+|   |   |-- main.ts
+|   |   |-- App.vue
+|   |   |-- router/
+|   |   |   `-- index.ts
+|   |   |-- stores/
+|   |   |   |-- auth.ts
+|   |   |   |-- notifications.ts
+|   |   |   |-- appShell.ts
+|   |   |   `-- preferences.ts
+|   |   |-- api/
+|   |   |   |-- client.ts
+|   |   |   |-- auth.ts
+|   |   |   |-- profiles.ts
+|   |   |   |-- plans.ts
+|   |   |   |-- declarations.ts
+|   |   |   |-- reviews.ts
+|   |   |   |-- deliveries.ts
+|   |   |   |-- notifications.ts
+|   |   |   |-- importsExports.ts
+|   |   |   |-- admin.ts
+|   |   |   `-- audit.ts
+|   |   |-- layouts/
+|   |   |   |-- AppShell.vue
+|   |   |   |-- AuthLayout.vue
+|   |   |   `-- DashboardShell.vue
+|   |   |-- components/
+|   |   |   |-- common/
+|   |   |   |-- dashboards/
+|   |   |   |-- forms/
+|   |   |   |-- history/
+|   |   |   |-- notifications/
+|   |   |   |-- plans/
+|   |   |   |-- declarations/
+|   |   |   `-- deliveries/
+|   |   |-- views/
+|   |   |   |-- auth/
+|   |   |   |-- shared/
+|   |   |   |-- participant/
+|   |   |   |-- reviewer/
+|   |   |   `-- admin/
+|   |   |-- composables/
+|   |   |-- types/
+|   |   |-- utils/
+|   |   `-- styles/
+|   `-- README.md
+|-- docs/
+|   |-- 01-architecture-plan.md
+|   |-- 02-directory-tree.txt
+|   |-- 03-data-model.md
+|   |-- 04-state-machine.md
+|   `-- 06-frontend-routes.md
+|-- run_tests.sh
+|-- unit_tests/
+|   |-- README.md
+|   |-- test_password_policy.py
+|   |-- test_password_history.py
+|   |-- test_lockout.py
+|   |-- test_token_logic.py
+|   |-- test_lifecycle_transitions.py
+|   |-- test_correction_workflow.py
+|   |-- test_download_expiry.py
+|   |-- test_notification_mute_rules.py
+|   |-- test_export_masking.py
+|   |-- test_checksum_generation.py
+|   |-- test_version_diff_summaries.py
+|   `-- test_permission_checks.py
+`-- README.md

@@ -1,0 +1,20 @@
+:root {
+  --app-bg: radial-gradient(circle at top left, rgba(30, 94, 255, 0.18), transparent 34%), linear-gradient(180deg, #f3f7ff 0%, #eff4f7 48%, #edf1f5 100%);
+  --surface-main: rgba(255, 255, 255, 0.82);
+  --surface-strong: #ffffff;
+  --surface-muted: #eef3fb;
+  --text-strong: #16213c;
+  --text-soft: #5f6b85;
+  --text-faint: #8c96ac;
+  --line-soft: rgba(133, 152, 184, 0.22);
+  --accent: #1e5eff;
+  --accent-soft: rgba(30, 94, 255, 0.12);
+  --success-soft: rgba(15, 159, 110, 0.15);
+  --warning-soft: rgba(217, 119, 6, 0.14);
+  --danger-soft: rgba(207, 45, 79, 0.14);
+  --shadow-card: 0 18px 48px rgba(17, 26, 53, 0.08);
+  --shadow-soft: 0 8px 24px rgba(17, 26, 53, 0.05);
+  --radius-lg: 24px;
+  --radius-md: 18px;
+  --radius-sm: 14px;
+}
