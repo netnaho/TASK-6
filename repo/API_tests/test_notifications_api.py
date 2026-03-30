@@ -11,6 +11,22 @@ def test_notifications_and_mute_settings(client):
     assert all_read.status_code == 200
 
 
+def test_users_preferences_endpoint_uses_typed_payload_model(client):
+    headers = login_headers(client, "participant_demo", "Participant#2026")
+
+    updated = client.patch(
+        "/api/v1/users/me/preferences",
+        json={"mentions_enabled": False},
+        headers=headers,
+    )
+    assert updated.status_code == 200
+    assert updated.json()["data"]["mentions_enabled"] is False
+
+    fetched = client.get("/api/v1/users/me/preferences", headers=headers)
+    assert fetched.status_code == 200
+    assert fetched.json()["data"]["mentions_enabled"] is False
+
+
 def test_notification_preferences_reject_unexpected_keys_and_user_tampering(client):
     headers = login_headers(client, "participant_demo", "Participant#2026")
 
