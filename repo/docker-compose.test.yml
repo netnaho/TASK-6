@@ -1,14 +1,8 @@
-name: nutrideclare
-
 services:
   postgres:
     image: postgres:16-alpine
     env_file:
       - .compose.defaults.env
-      - path: .compose.env
-        required: false
-    ports:
-      - "55432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
@@ -22,16 +16,12 @@ services:
       context: ./backend
     env_file:
       - .compose.defaults.env
-      - path: .compose.env
-        required: false
     environment:
       ENVIRONMENT: ${ENVIRONMENT:-development}
       POSTGRES_SERVER: postgres
       POSTGRES_PORT: 5432
       DB_ENCRYPTION_ENABLED: ${DB_ENCRYPTION_ENABLED:-true}
       STORAGE_ROOT: /var/lib/nutrideclare/storage
-    ports:
-      - "8000:8000"
     depends_on:
       postgres:
         condition: service_healthy
@@ -39,20 +29,6 @@ services:
       - file_storage:/var/lib/nutrideclare/storage
     healthcheck:
       test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:8000/health')\""]
-      interval: 15s
-      timeout: 5s
-      retries: 10
-
-  frontend:
-    build:
-      context: ./frontend
-    ports:
-      - "4173:4173"
-    depends_on:
-      backend:
-        condition: service_started
-    healthcheck:
-      test: ["CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1:4173 || exit 1"]
       interval: 15s
       timeout: 5s
       retries: 10

@@ -103,6 +103,7 @@ def seed_demo_data(db):
         db.add(NotificationPreference(user_id=user.id))
         db.add(PasswordHistory(user_id=user.id, password_hash=password_hash, created_at=utc_now()))
 
+    profile_sensitive = {"allergy_detail": "Tree nuts", "clinician_notes": "Monitor iron intake"}
     profile = ParticipantProfile(
         user_id=participant.id,
         profile_status="complete",
@@ -110,11 +111,21 @@ def seed_demo_data(db):
         medical_flags_json={"has_allergies": True},
         activity_json={"activity_level": "moderate"},
         anthropometrics_json={"height_cm": 170, "weight_kg": 68},
-        encrypted_payload=json.dumps({"allergy_detail": "Tree nuts", "clinician_notes": "Monitor iron intake"}),
+        encrypted_payload=json.dumps(profile_sensitive),
     )
     db.add(profile)
     db.flush()
-    profile_version = ParticipantProfileVersion(profile_id=profile.id, version_number=1, snapshot_json={"profile_status": "complete"}, change_summary_json=[], created_by=participant.username)
+    profile_snapshot = {
+        "id": str(profile.id),
+        "user_id": str(participant.id),
+        "profile_status": "complete",
+        "demographics_json": profile.demographics_json,
+        "medical_flags_json": profile.medical_flags_json,
+        "activity_json": profile.activity_json,
+        "anthropometrics_json": profile.anthropometrics_json,
+        "sensitive": profile_sensitive,
+    }
+    profile_version = ParticipantProfileVersion(profile_id=profile.id, version_number=1, snapshot_json=profile_snapshot, change_summary_json=[], created_by=participant.username)
     db.add(profile_version)
     db.flush()
     profile.current_version_id = profile_version.id
@@ -122,7 +133,26 @@ def seed_demo_data(db):
     plan = NutritionPlan(participant_id=participant.id, profile_id=profile.id, title="12 Week Energy Balance", duration_weeks=12, goal_category="weight_management", status="draft")
     db.add(plan)
     db.flush()
-    plan_version = NutritionPlanVersion(plan_id=plan.id, version_number=1, summary="Foundational energy balance program", phase_count=3, snapshot_json={"title": plan.title}, change_summary_json=[], created_by=participant.username)
+    plan_snapshot = {
+        "title": plan.title,
+        "duration_weeks": plan.duration_weeks,
+        "goal_category": plan.goal_category,
+        "summary": "Foundational energy balance program",
+        "phases": [
+            {
+                "phase_number": phase_number,
+                "week_start": (phase_number - 1) * 4 + 1,
+                "week_end": phase_number * 4,
+                "objective": f"Phase {phase_number} objective",
+                "calorie_target": 2000 - phase_number * 50,
+                "macro_targets_json": {"protein": 120},
+                "habits_json": ["hydrate"],
+                "success_metrics_json": ["weekly consistency"],
+            }
+            for phase_number in range(1, 4)
+        ],
+    }
+    plan_version = NutritionPlanVersion(plan_id=plan.id, version_number=1, summary="Foundational energy balance program", phase_count=3, snapshot_json=plan_snapshot, change_summary_json=[], created_by=participant.username)
     db.add(plan_version)
     db.flush()
     plan.current_version_id = plan_version.id

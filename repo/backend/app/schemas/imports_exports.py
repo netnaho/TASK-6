@@ -1,6 +1,6 @@
 import uuid
 
-from pydantic import BaseModel
+from pydantic import BaseModel, model_validator
 
 from app.core.constants import EntityType, ExportScopeType, ImportExportFormat
 
@@ -24,6 +24,12 @@ class ExportRequest(BaseModel):
     scope_type: ExportScopeType
     masking_policy_id: uuid.UUID | None = None
     mapping_id: uuid.UUID | None = None
+
+    @model_validator(mode="after")
+    def validate_scope_for_format(self):
+        if self.scope_type == ExportScopeType.PROFILES and self.format != ImportExportFormat.XLSX:
+            raise ValueError("Input should be 'declarations' for non-XLSX exports.")
+        return self
 
 
 class ImportRequestMeta(BaseModel):

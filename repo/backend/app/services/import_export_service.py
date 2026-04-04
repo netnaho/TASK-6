@@ -191,6 +191,8 @@ class ImportExportService:
             ]
             return self.export_rows(user, format_name, scope_type, rows, masking_policy_id, mapping_id)
         if scope_type == "profiles":
+            if format_name != "xlsx":
+                raise ValidationError("Profile exports are only supported in XLSX format.")
             profiles = self.db.query(ParticipantProfile).order_by(ParticipantProfile.created_at.desc()).all()
             rows = [self._profile_export_row(item) for item in profiles]
             return self.export_rows(user, format_name, scope_type, rows, masking_policy_id, mapping_id)

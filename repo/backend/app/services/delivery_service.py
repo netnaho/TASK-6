@@ -5,7 +5,7 @@ import zipfile
 from fastapi import UploadFile
 
 from app.core.config import get_settings
-from app.core.constants import DeliveryFileType, Role
+from app.core.constants import DeclarationState, DeliveryFileType, Role
 from app.core.exceptions import AuthenticationError, AuthorizationError, ConflictError, NotFoundError
 from app.models.delivery import AcceptanceConfirmation, DeliveryFile, DownloadToken
 from app.repositories.declaration_repository import DeclarationRepository
@@ -159,7 +159,10 @@ class DeliveryService:
         ensure_package_access(user, package)
         file = self.repo.get_file_for_package(package_id, delivery_file_id)
         if not file:
-            raise NotFoundError("Delivery file not found.")
+            file = self.repo.get_file(delivery_file_id)
+            if not file:
+                raise NotFoundError("Delivery file not found.")
+            raise ConflictError("Delivery file does not belong to the selected package.")
         target_user_id = issued_to_user_id or package.participant_id
         target_role = self._target_role_for_link(user, package.participant_id, target_user_id)
         if target_role not in self._normalize_roles(file.allowed_roles):
@@ -297,8 +300,10 @@ class DeliveryService:
         if not package:
             raise NotFoundError("Package not found.")
         ensure_package_owner(user, package)
-        if not self.repo.list_files(package_id):
+        if package.state == DeclarationState.DRAFT and not self.repo.list_files(package_id):
             raise ConflictError("A delivery artifact is required before acceptance can be recorded.")
+        if package.accepted_at is not None:
+            raise ConflictError("Delivery acceptance has already been recorded.")
         confirmation = AcceptanceConfirmation(
             package_id=package_id,
             confirmed_by=user.id,

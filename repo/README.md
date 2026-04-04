@@ -5,13 +5,16 @@ NutriDeclare Offline Compliance System is an offline-first compliance platform f
 ## Start Command
 
 ```bash
-./init-db.sh
 docker compose up --build
 ```
 
 `docker compose up --build` works out of the box with committed development defaults from `.compose.defaults.env`.
 
 `init-db.sh` generates a local ignored `.compose.env` file with randomized database, crypto, and demo-account secrets that override those defaults. No manual editing is required.
+
+Run `./init-db.sh` before the first `docker compose up --build` only if you want randomized local secrets instead of the committed development defaults.
+
+If an older `.compose.env` triggers Compose warnings like `The "X" variable is not set`, regenerate it with `./init-db.sh --force` before starting a fresh stack. If PostgreSQL was already initialized with different credentials, recreate its data volume so the container and database passwords stay aligned.
 
 ## Service Addresses
 
@@ -129,9 +132,11 @@ Run the full unit and API suite with Docker Compose:
 ```
 
 The script:
-- bootstraps `.compose.env` via `./init-db.sh` if it does not exist yet
+- uses a dedicated test Compose stack with committed defaults from `.compose.defaults.env`
+- uses an isolated Compose project so local app containers and volumes do not interfere
 - starts PostgreSQL if needed
-- reuses the generated PostgreSQL credentials from `.compose.env`
+- builds the current backend image before running tests
+- uses fixed test/demo credentials and PostgreSQL settings expected by the automated suite
 - creates a dedicated `nutrideclare_test` database automatically
 - runs `pytest` for `unit_tests/` and `API_tests/` inside the backend container
 

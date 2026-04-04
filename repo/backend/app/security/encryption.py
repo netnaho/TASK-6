@@ -3,7 +3,7 @@ import json
 import os
 
 from cryptography.hazmat.primitives.ciphers.aead import AESGCM
-from sqlalchemy import Text, cast, func, literal, text
+from sqlalchemy import JSON, Text, cast, func, literal, text
 from sqlalchemy.sql.elements import ColumnElement
 from sqlalchemy.types import TypeDecorator
 
@@ -79,10 +79,12 @@ class PgcryptoEncryptedJSON(TypeDecorator):
     def process_result_value(self, value, dialect):
         if value is None:
             return None
+        if isinstance(value, (dict, list)):
+            return value
         return json.loads(value)
 
     def bind_expression(self, bindvalue):
         return self.encryption.db_encrypt_expression(bindvalue)
 
     def column_expression(self, column):
-        return self.encryption.db_decrypt_expression(column)
+        return cast(self.encryption.db_decrypt_expression(column), JSON)

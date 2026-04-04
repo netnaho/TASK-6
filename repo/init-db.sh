@@ -10,7 +10,7 @@ generate_token() {
 }
 
 generate_password() {
-  python3 -c 'import secrets, string; alphabet = string.ascii_letters + string.digits + "!@#$%^&*()-_=+"; print("".join(secrets.choice(alphabet) for _ in range(20)))'
+  python3 -c 'import secrets, string; alphabet = string.ascii_letters + string.digits + "!@%^&*()-_=+"; print("".join(secrets.choice(alphabet) for _ in range(20)))'
 }
 
 generate_encryption_key() {

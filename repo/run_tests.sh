@@ -3,11 +3,18 @@
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "$0")" && pwd)"
-ENV_FILE="$ROOT_DIR/.compose.env"
+DEFAULT_ENV_FILE="$ROOT_DIR/.compose.defaults.env"
 TEST_DB_NAME="nutrideclare_test"
+COMPOSE_PROJECT_NAME="nutrideclare-tests"
+COMPOSE_FILES=(
+  -f "$ROOT_DIR/docker-compose.test.yml"
+)
+
+ENV_FILE="$DEFAULT_ENV_FILE"
 
 if [[ ! -f "$ENV_FILE" ]]; then
-  "$ROOT_DIR/init-db.sh"
+  printf 'Compose environment file not found: %s\n' "$ENV_FILE" >&2
+  exit 1
 fi
 
 read_env_value() {
@@ -35,9 +42,13 @@ POSTGRES_USER="$(read_env_value POSTGRES_USER)"
 POSTGRES_PASSWORD="$(read_env_value POSTGRES_PASSWORD)"
 POSTGRES_PASSWORD_URLENCODED="$(python3 -c 'import sys, urllib.parse; print(urllib.parse.quote(sys.argv[1], safe=""))' "$POSTGRES_PASSWORD")"
 
-docker compose up -d postgres
+docker compose -p "$COMPOSE_PROJECT_NAME" "${COMPOSE_FILES[@]}" down -v --remove-orphans >/dev/null 2>&1 || true
 
-docker compose run --rm \
+docker compose -p "$COMPOSE_PROJECT_NAME" "${COMPOSE_FILES[@]}" up -d postgres
+
+docker compose -p "$COMPOSE_PROJECT_NAME" "${COMPOSE_FILES[@]}" build backend
+
+docker compose -p "$COMPOSE_PROJECT_NAME" "${COMPOSE_FILES[@]}" run --rm \
   -v "$ROOT_DIR:/workspace" \
   -e TEST_DB_NAME="$TEST_DB_NAME" \
   -e TEST_DB_USER="$POSTGRES_USER" \
