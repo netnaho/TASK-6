@@ -3,7 +3,9 @@ services:
     image: postgres:16-alpine
     container_name: nutrideclare-postgres
     env_file:
-      - .compose.env
+      - .compose.defaults.env
+      - path: .compose.env
+        required: false
     ports:
       - "55432:5432"
     volumes:
@@ -19,7 +21,9 @@ services:
       context: ./backend
     container_name: nutrideclare-backend
     env_file:
-      - .compose.env
+      - .compose.defaults.env
+      - path: .compose.env
+        required: false
     environment:
       ENVIRONMENT: ${ENVIRONMENT:-development}
       POSTGRES_SERVER: postgres
