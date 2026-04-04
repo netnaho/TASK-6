@@ -39,3 +39,15 @@ def test_reviewer_complete_review_happy_path_and_error_cases(client):
     unassigned_headers = login_headers(client, "reviewer_unassigned", "ReviewerUnassigned#2026")
     unassigned = client.post(f"/api/v1/reviews/{package['id']}/complete", json={"note": "Not assigned"}, headers=unassigned_headers)
     assert unassigned.status_code == 403
+
+
+def test_reviewer_context_exposes_submitted_profile_and_plan(client):
+    reviewer_headers = login_headers(client, "reviewer_demo", "Reviewer#2026")
+    participant_headers = login_headers(client, "participant_demo", "Participant#2026")
+    package = client.get("/api/v1/declarations", headers=participant_headers).json()["data"][0]
+
+    response = client.get(f"/api/v1/reviews/{package['id']}/context", headers=reviewer_headers)
+    assert response.status_code == 200
+    payload = response.json()["data"]
+    assert payload["profile_version"]["snapshot_json"]["sensitive"]["allergy_detail"] == "Tree nuts"
+    assert payload["plan_version"]["snapshot_json"]["phases"][0]["objective"]

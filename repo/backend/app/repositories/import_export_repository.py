@@ -20,5 +20,11 @@ class ImportExportRepository(BaseRepository):
     def list_imports(self):
         return self.list_scalars(select(ImportJob).order_by(ImportJob.created_at.desc()))
 
+    def get_import(self, job_id):
+        return self.scalar_one_or_none(select(ImportJob).where(ImportJob.id == job_id))
+
     def list_exports(self):
         return self.list_scalars(select(ExportJob).order_by(ExportJob.created_at.desc()))
+
+    def get_export(self, job_id):
+        return self.scalar_one_or_none(select(ExportJob).where(ExportJob.id == job_id))

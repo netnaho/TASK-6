@@ -51,6 +51,8 @@ export interface VersionRecord {
   id: string
   version_number: number
   summary?: string | null
+  profile_version_id?: string | null
+  plan_version_id?: string | null
   snapshot_json: Record<string, unknown>
   change_summary_json: Array<{ field: string; summary: string; before?: unknown; after?: unknown }>
   created_at: string
@@ -75,7 +77,7 @@ export interface DeclarationRecord {
 
 export interface DeliveryFileRecord {
   id: string
-  package_id: string
+  package_id: string | null
   file_type: string
   display_name: string
   mime_type: string
@@ -83,7 +85,84 @@ export interface DeliveryFileRecord {
   size_bytes: number
   version_label?: string | null
   is_final: boolean
+  allowed_roles: string[]
   created_at: string
+}
+
+export interface ImportJobRecord {
+  id: string
+  created_by: string
+  format: string
+  source_file_id?: string | null
+  mapping_id?: string | null
+  status: string
+  row_count: number
+  success_count: number
+  failure_count: number
+  checksum_sha256?: string | null
+  started_at?: string | null
+  completed_at?: string | null
+  created_at: string
+}
+
+export interface ExportJobRecord {
+  id: string
+  created_by: string
+  format: string
+  scope_type: string
+  masking_policy_id?: string | null
+  status: string
+  row_count: number
+  checksum_sha256?: string | null
+  output_file_id?: string | null
+  started_at?: string | null
+  completed_at?: string | null
+  created_at: string
+}
+
+export interface ImportJobDetail {
+  job: ImportJobRecord
+  source_file?: DeliveryFileRecord | null
+  errors: Array<{ row: number; error: string; row_data: Record<string, unknown> }>
+  preview_rows: Array<Record<string, unknown>>
+}
+
+export interface ExportJobDetail {
+  job: ExportJobRecord
+  output_file?: DeliveryFileRecord | null
+  preview_rows: Array<Record<string, unknown>>
+}
+
+export interface StateHistoryRecord {
+  id: string
+  to_state: string
+  reason_code?: string | null
+  reason_text?: string | null
+  changed_at: string
+}
+
+export interface ReviewContext {
+  package: DeclarationRecord
+  history: {
+    versions: VersionRecord[]
+    state_history: StateHistoryRecord[]
+  }
+  profile_version?: {
+    id: string
+    version_number: number
+    snapshot_json: Record<string, unknown>
+    change_summary_json: Array<{ field: string; summary: string; before?: unknown; after?: unknown }>
+    created_at: string
+  } | null
+  plan_version?: {
+    id: string
+    version_number: number
+    summary?: string | null
+    snapshot_json: Record<string, unknown>
+    change_summary_json: Array<{ field: string; summary: string; before?: unknown; after?: unknown }>
+    created_at: string
+  } | null
+  corrections: Array<Record<string, any>>
 }
 
 export interface AuditLogRecord {

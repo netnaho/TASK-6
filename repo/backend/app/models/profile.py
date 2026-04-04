@@ -7,7 +7,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.session import Base
 from app.models.mixins import TimestampMixin, UUIDPrimaryKeyMixin
-from app.security.encryption import PgcryptoEncryptedText
+from app.security.encryption import PgcryptoEncryptedJSON, PgcryptoEncryptedText
 
 
 class ParticipantProfile(UUIDPrimaryKeyMixin, TimestampMixin, Base):
@@ -41,8 +41,8 @@ class ParticipantProfileVersion(UUIDPrimaryKeyMixin, TimestampMixin, Base):
 
     profile_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("participant_profiles.id", ondelete="CASCADE"), nullable=False, index=True)
     version_number: Mapped[int] = mapped_column(Integer, nullable=False)
-    snapshot_json: Mapped[dict] = mapped_column(JSON, nullable=False)
-    change_summary_json: Mapped[list[dict]] = mapped_column(JSON, nullable=False, default=list)
+    snapshot_json: Mapped[dict] = mapped_column(PgcryptoEncryptedJSON(), nullable=False)
+    change_summary_json: Mapped[list[dict]] = mapped_column(PgcryptoEncryptedJSON(), nullable=False, default=list)
     created_by: Mapped[str | None] = mapped_column(String(255), nullable=True)
 
     profile: Mapped[ParticipantProfile] = relationship(back_populates="versions", foreign_keys=[profile_id])

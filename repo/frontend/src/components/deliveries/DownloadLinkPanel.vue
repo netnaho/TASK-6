@@ -8,8 +8,8 @@
       <p class="muted">Create a time-bound file link for the selected delivery artifact.</p>
       <div style="display:flex; gap: 12px; flex-wrap: wrap;">
         <n-button v-if="allowCreate" type="primary" :loading="loading" @click="$emit('create')">Generate secure link</n-button>
-        <n-button v-if="token" secondary @click="$emit('download')">Download</n-button>
-        <n-button v-if="token && !accepted" type="success" @click="$emit('accept')">Accept delivery</n-button>
+        <n-button v-if="token && allowDownload" secondary @click="$emit('download')">Download</n-button>
+        <n-button v-if="token && allowAccept && !accepted" type="success" @click="$emit('accept')">Accept delivery</n-button>
       </div>
       <div v-if="token" style="margin-top: 14px;">
         <n-alert type="success" title="Link ready">
@@ -26,7 +26,7 @@
 import { computed } from 'vue'
 import { NAlert, NButton, NCard } from 'naive-ui'
 
-const props = defineProps<{ token?: string; expired?: boolean; loading?: boolean; expiresAt?: string; accepted?: boolean; allowCreate?: boolean }>()
+const props = defineProps<{ token?: string; expired?: boolean; loading?: boolean; expiresAt?: string; accepted?: boolean; allowCreate?: boolean; allowDownload?: boolean; allowAccept?: boolean }>()
 defineEmits<{ create: []; download: []; accept: [] }>()
 
 const countdownLabel = computed(() => {

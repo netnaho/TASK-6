@@ -23,6 +23,32 @@ def test_import_export_and_mapping_tools(client):
     )
     assert imported.status_code == 200
 
+    export_id = export.json()["data"]["id"]
+    export_detail = client.get(f"/api/v1/exports/{export_id}", headers=headers)
+    assert export_detail.status_code == 200
+    assert export_detail.json()["data"]["output_file"]["id"] == export.json()["data"]["output_file_id"]
+
+    export_link = client.get(f"/api/v1/exports/{export_id}/download-link", headers=headers)
+    assert export_link.status_code == 200
+    export_download = client.get(f"/api/v1/downloads/{export_link.json()['data']['token']}", headers=headers)
+    assert export_download.status_code == 200
+
+    import_id = imported.json()["data"]["id"]
+    import_detail = client.get(f"/api/v1/imports/{import_id}", headers=headers)
+    assert import_detail.status_code == 200
+    assert import_detail.json()["data"]["source_file"]["id"] == imported.json()["data"]["source_file_id"]
+
+    import_link = client.get(f"/api/v1/imports/{import_id}/source-download-link", headers=headers)
+    assert import_link.status_code == 200
+    import_download = client.get(f"/api/v1/downloads/{import_link.json()['data']['token']}", headers=headers)
+    assert import_download.status_code == 200
+
+    profile_export = client.post("/api/v1/exports", json={"format": "xlsx", "scope_type": "profiles", "masking_policy_id": policy.json()["data"]["id"]}, headers=headers)
+    assert profile_export.status_code == 200
+    profile_export_detail = client.get(f"/api/v1/exports/{profile_export.json()['data']['id']}", headers=headers)
+    assert profile_export_detail.status_code == 200
+    assert profile_export_detail.json()["data"]["preview_rows"]
+
     audit = client.get("/api/v1/audit?page=1&page_size=200", headers=headers)
     actions = [item["action_type"] for item in audit.json()["data"]]
     assert "data_export" in actions

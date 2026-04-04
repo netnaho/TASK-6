@@ -61,3 +61,28 @@ class PgcryptoEncryptedText(TypeDecorator):
 
     def column_expression(self, column):
         return self.encryption.db_decrypt_expression(column)
+
+
+class PgcryptoEncryptedJSON(TypeDecorator):
+    impl = Text
+    cache_ok = True
+
+    def __init__(self) -> None:
+        super().__init__()
+        self.encryption = EncryptionService()
+
+    def process_bind_param(self, value, dialect):
+        if value is None:
+            return None
+        return json.dumps(value)
+
+    def process_result_value(self, value, dialect):
+        if value is None:
+            return None
+        return json.loads(value)
+
+    def bind_expression(self, bindvalue):
+        return self.encryption.db_encrypt_expression(bindvalue)
+
+    def column_expression(self, column):
+        return self.encryption.db_decrypt_expression(column)

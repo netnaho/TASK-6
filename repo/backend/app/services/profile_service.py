@@ -2,6 +2,7 @@ import json
 import logging
 
 from app.core.exceptions import NotFoundError
+from app.models.user import User
 from app.models.profile import ParticipantProfile, ParticipantProfileVersion
 from app.repositories.profile_repository import ProfileRepository
 from app.security.permissions import ensure_profile_owner
@@ -26,6 +27,16 @@ class ProfileService:
 
     def upsert(self, user, payload):
         profile = self.repo.get_by_user_id(user.id)
+        profile = self._upsert_profile(user, user, profile, payload)
+        self.db.commit()
+        self.db.refresh(profile)
+        return profile
+
+    def import_for_user(self, actor, target_user: User, payload):
+        profile = self.repo.get_by_user_id(target_user.id)
+        return self._upsert_profile(actor, target_user, profile, payload)
+
+    def _upsert_profile(self, actor, target_user, profile, payload):
         snapshot = payload.model_dump()
         encrypted = json.dumps(snapshot["sensitive"])
         base_payload = {
@@ -38,7 +49,7 @@ class ProfileService:
         }
         previous_snapshot = None
         if not profile:
-            profile = ParticipantProfile(user_id=user.id, **base_payload)
+            profile = ParticipantProfile(user_id=target_user.id, **base_payload)
             self.db.add(profile)
             self.db.flush()
         else:
@@ -54,19 +65,18 @@ class ProfileService:
             version_number=self.repo.next_version_number(profile.id),
             snapshot_json=current_snapshot,
             change_summary_json=VersioningService.build_change_summary(previous_snapshot, current_snapshot),
-            created_by=user.username,
+            created_by=actor.username,
         )
         self.db.add(version)
         self.db.flush()
         profile.current_version_id = version.id
         self.db.add(profile)
-        self.audit.log(actor_user_id=user.id, action_type="profile_upsert", entity_type="profile", entity_id=str(profile.id), metadata={"version": version.version_number})
+        self.audit.log(actor_user_id=actor.id, action_type="profile_upsert", entity_type="profile", entity_id=str(profile.id), metadata={"version": version.version_number})
         logger.info(
             "Profile upserted",
-            extra={"profile_id": str(profile.id), "version": version.version_number, "user_id": str(user.id)},
+            extra={"profile_id": str(profile.id), "version": version.version_number, "user_id": str(target_user.id), "actor_user_id": str(actor.id)},
         )
-        self.db.commit()
-        self.db.refresh(profile)
+        self.db.flush()
         return profile
 
     def history(self, user_id):

@@ -32,13 +32,33 @@ def list_imports(db: DBSession, user=Depends(require_roles(Role.ADMINISTRATOR)))
 
 @router.post("/exports")
 def create_export(payload: ExportRequest, db: DBSession, user=Depends(require_roles(Role.ADMINISTRATOR))):
-    job, storage_path = ImportExportService(db).export_scope(user, payload.format, payload.scope_type, payload.masking_policy_id, payload.mapping_id)
-    return success_response({"job": job, "storage_path": storage_path}, "Export completed")
+    job = ImportExportService(db).export_scope(user, payload.format, payload.scope_type, payload.masking_policy_id, payload.mapping_id)
+    return success_response(job, "Export completed")
 
 
 @router.get("/exports")
 def list_exports(db: DBSession, user=Depends(require_roles(Role.ADMINISTRATOR))):
     return success_response(ImportExportService(db).repo.list_exports())
+
+
+@router.get("/imports/{job_id}")
+def get_import(job_id: str, db: DBSession, user=Depends(require_roles(Role.ADMINISTRATOR))):
+    return success_response(ImportExportService(db).get_import_detail(job_id))
+
+
+@router.get("/imports/{job_id}/source-download-link")
+def import_source_download_link(job_id: str, db: DBSession, user=Depends(require_roles(Role.ADMINISTRATOR))):
+    return success_response(ImportExportService(db).create_import_source_download_link(user, job_id), "Import source download link created")
+
+
+@router.get("/exports/{job_id}")
+def get_export(job_id: str, db: DBSession, user=Depends(require_roles(Role.ADMINISTRATOR))):
+    return success_response(ImportExportService(db).get_export_detail(job_id))
+
+
+@router.get("/exports/{job_id}/download-link")
+def export_download_link(job_id: str, db: DBSession, user=Depends(require_roles(Role.ADMINISTRATOR))):
+    return success_response(ImportExportService(db).create_export_download_link(user, job_id), "Export download link created")
 
 
 @router.get("/admin/field-mappings")

@@ -29,6 +29,7 @@ yarn.lock
 # Environment Variables
 .env
 .env.*
+.compose.env
 
 # Docker
 docker-compose.override.yml

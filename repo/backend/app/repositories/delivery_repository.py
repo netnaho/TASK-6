@@ -11,6 +11,9 @@ class DeliveryRepository(BaseRepository):
     def get_file(self, file_id):
         return self.scalar_one_or_none(select(DeliveryFile).where(DeliveryFile.id == file_id))
 
+    def get_file_for_package(self, package_id, file_id):
+        return self.scalar_one_or_none(select(DeliveryFile).where(DeliveryFile.package_id == package_id, DeliveryFile.id == file_id))
+
     def get_download_token(self, token_hash):
         return self.scalar_one_or_none(select(DownloadToken).where(DownloadToken.token_hash == token_hash))
 

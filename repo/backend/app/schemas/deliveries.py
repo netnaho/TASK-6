@@ -8,6 +8,7 @@ class DeliveryLinkRequest(BaseModel):
     delivery_file_id: uuid.UUID
     expires_in_hours: int | None = None
     purpose: str = "download"
+    issued_to_user_id: uuid.UUID | None = None
 
 
 class AcceptanceRequest(BaseModel):
@@ -17,7 +18,7 @@ class AcceptanceRequest(BaseModel):
 
 class DeliveryFileRead(BaseModel):
     id: uuid.UUID
-    package_id: uuid.UUID
+    package_id: uuid.UUID | None
     file_type: str
     display_name: str
     mime_type: str
@@ -25,4 +26,5 @@ class DeliveryFileRead(BaseModel):
     size_bytes: int
     version_label: str | None
     is_final: bool
+    allowed_roles: list[str]
     created_at: datetime

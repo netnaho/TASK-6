@@ -24,6 +24,15 @@ def ensure_package_owner(user, package) -> None:
     raise AuthorizationError("You do not have permission to modify this package.")
 
 
+def ensure_delivery_file_access(user, delivery_file) -> None:
+    if user.role == Role.ADMINISTRATOR:
+        return
+    allowed_roles = set(getattr(delivery_file, "allowed_roles", None) or [])
+    if not allowed_roles or user.role in allowed_roles:
+        return
+    raise AuthorizationError("You do not have permission to access this delivery file.")
+
+
 def ensure_plan_owner(user, plan) -> None:
     if user.role == Role.PARTICIPANT and plan.participant_id == user.id:
         return

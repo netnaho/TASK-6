@@ -48,7 +48,8 @@ class DeclarationService:
             return int(value)
         return int(self.settings.review_due_hours)
 
-    def create(self, user, profile_id, plan_id):
+    def create(self, user, profile_id, plan_id, *, actor_user=None, package_number: str | None = None, commit: bool = True):
+        actor = actor_user or user
         profile = self.profile_repo.get_by_user_id(user.id)
         plan = self.plan_repo.get(plan_id)
         if not profile or str(profile.id) != str(profile_id):
@@ -56,7 +57,7 @@ class DeclarationService:
         if not plan or str(plan.profile_id) != str(profile_id):
             raise ValidationError("Plan mismatch.")
         package = DeclarationPackage(
-            package_number=f"PKG-{utc_now().strftime('%Y%m%d%H%M%S')}-{uuid.uuid4().hex[:6].upper()}",
+            package_number=package_number or f"PKG-{utc_now().strftime('%Y%m%d%H%M%S')}-{uuid.uuid4().hex[:6].upper()}",
             participant_id=user.id,
             profile_id=profile_id,
             plan_id=plan_id,
@@ -66,14 +67,15 @@ class DeclarationService:
         )
         self.db.add(package)
         self.db.flush()
-        self._write_version(package, user.username, None)
-        self._write_state_history(package, None, DeclarationState.DRAFT, user.username, None, None)
-        self.audit.log(actor_user_id=user.id, action_type="declaration_create", entity_type="declaration", entity_id=str(package.id), metadata={})
-        self.db.commit()
-        self.db.refresh(package)
+        self._write_version(package, actor.username, None)
+        self._write_state_history(package, None, DeclarationState.DRAFT, actor.username, None, None)
+        self.audit.log(actor_user_id=actor.id, action_type="declaration_create", entity_type="declaration", entity_id=str(package.id), metadata={})
+        if commit:
+            self.db.commit()
+            self.db.refresh(package)
         return package
 
-    def transition(self, user, package_id, to_state: DeclarationState, reason_code: str | None = None, reason_text: str | None = None):
+    def transition(self, user, package_id, to_state: DeclarationState, reason_code: str | None = None, reason_text: str | None = None, *, commit: bool = True):
         package = self.get(package_id)
         assigned_reviewer = None
         if to_state not in LEGAL_TRANSITIONS[package.state]:
@@ -135,9 +137,25 @@ class DeclarationService:
             "Declaration state transition",
             extra={"package_id": str(package.id), "from_state": str(old_state), "to_state": str(to_state)},
         )
-        self.db.commit()
-        self.db.refresh(package)
+        if commit:
+            self.db.commit()
+            self.db.refresh(package)
         return package
+
+    def get_review_context(self, package_id):
+        package = self.get(package_id)
+        profile_version = self.profile_repo.get_version(package.current_profile_version_id) if package.current_profile_version_id else None
+        plan_version = self.plan_repo.get_version(package.current_plan_version_id) if package.current_plan_version_id else None
+        return {
+            "package": package,
+            "history": {
+                "versions": package.versions,
+                "state_history": package.state_history,
+            },
+            "profile_version": profile_version,
+            "plan_version": plan_version,
+            "corrections": package.correction_requests,
+        }
 
     def request_correction(self, reviewer, package_id, payload):
         package = self.get(package_id)

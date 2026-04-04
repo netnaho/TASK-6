@@ -59,6 +59,13 @@ class Settings(BaseSettings):
 
     cors_origins: list[str] = ["http://localhost:4173", "http://frontend:4173"]
 
+    seed_participant_username: str = "participant_demo"
+    seed_participant_password: str = "Participant#2026"
+    seed_reviewer_username: str = "reviewer_demo"
+    seed_reviewer_password: str = "Reviewer#2026"
+    seed_admin_username: str = "admin_demo"
+    seed_admin_password: str = "Admin#2026Secure"
+
     @property
     def sqlalchemy_database_uri(self) -> str:
         if self.database_url:

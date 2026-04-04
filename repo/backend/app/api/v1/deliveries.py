@@ -18,14 +18,14 @@ def list_delivery_files(package_id: str, db: DBSession, user=Depends(get_current
 
 
 @router.post("/{package_id}/files")
-async def upload_delivery_file(package_id: str, file_type: str = Form(...), is_final: bool = Form(False), upload: UploadFile = File(...), db=Depends(get_db), user=Depends(require_roles(Role.REVIEWER, Role.ADMINISTRATOR))):
-    file = await DeliveryService(db).upload_file(user, package_id, upload, file_type, is_final)
+async def upload_delivery_file(package_id: str, file_type: str = Form(...), is_final: bool = Form(False), allowed_roles: list[str] | None = Form(None), upload: UploadFile = File(...), db=Depends(get_db), user=Depends(require_roles(Role.REVIEWER, Role.ADMINISTRATOR))):
+    file = await DeliveryService(db).upload_file(user, package_id, upload, file_type, is_final, allowed_roles)
     return success_response(file, "Delivery file uploaded")
 
 
 @router.post("/{package_id}/links")
 def create_delivery_link(package_id: str, payload: DeliveryLinkRequest, db: DBSession, user=Depends(require_roles(Role.REVIEWER, Role.ADMINISTRATOR))):
-    result = DeliveryService(db).create_download_link(user, package_id, payload.delivery_file_id, payload.expires_in_hours, payload.purpose)
+    result = DeliveryService(db).create_download_link(user, package_id, payload.delivery_file_id, payload.expires_in_hours, payload.purpose, payload.issued_to_user_id)
     return success_response(result, "Download link created")
 
 

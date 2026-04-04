@@ -35,6 +35,14 @@ def corrections(package_id: str, db: DBSession, user=Depends(require_roles(Role.
     return success_response(package.correction_requests)
 
 
+@router.get("/{package_id}/context")
+def review_context(package_id: str, db: DBSession, user=Depends(require_roles(Role.REVIEWER, Role.ADMINISTRATOR))):
+    service = DeclarationService(db)
+    package = service.get(package_id)
+    ensure_package_access(user, package)
+    return success_response(service.get_review_context(package_id))
+
+
 @router.post("/{package_id}/complete")
 def complete_review(package_id: str, payload: ReviewCompleteRequest, db: DBSession, user=Depends(require_roles(Role.REVIEWER, Role.ADMINISTRATOR))):
     service = DeclarationService(db)

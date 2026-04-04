@@ -29,3 +29,16 @@ class ExportRequest(BaseModel):
 class ImportRequestMeta(BaseModel):
     format: ImportExportFormat
     mapping_id: uuid.UUID | None = None
+
+
+class ImportJobDetailRead(BaseModel):
+    job: dict
+    source_file: dict | None = None
+    errors: list[dict] = []
+    preview_rows: list[dict] = []
+
+
+class ExportJobDetailRead(BaseModel):
+    job: dict
+    output_file: dict | None = None
+    preview_rows: list[dict] = []

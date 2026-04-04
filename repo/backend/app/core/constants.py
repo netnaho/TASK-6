@@ -45,6 +45,8 @@ class DeliveryFileType(StrEnum):
     SUPPORTING_RAW_EXPORT = "supporting_raw_export"
     REVISION_NOTE = "revision_note"
     IMPORT_SOURCE = "import_source"
+    IMPORT_ERROR_REPORT = "import_error_report"
+    EXPORT_ARTIFACT = "export_artifact"
     ACCEPTANCE_RECEIPT = "acceptance_receipt"
     BULK_PACKAGE = "bulk_package"
 
@@ -76,6 +78,7 @@ class EntityType(StrEnum):
 
 class ExportScopeType(StrEnum):
     DECLARATIONS = "declarations"
+    PROFILES = "profiles"
 
 
 class JobRunStatus(StrEnum):

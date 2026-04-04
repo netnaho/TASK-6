@@ -44,32 +44,32 @@
       </div>
 
       <div class="page-shell">
-        <n-card class="section-card" title="Delivery artifacts">
-          <div style="display:flex; justify-content:flex-end; margin-bottom: 14px;">
-            <n-button secondary :loading="bulkLoading" :disabled="!deliveries.length" @click="generateBulkLink">Download All</n-button>
-          </div>
-          <n-data-table :columns="deliveryColumns" :data="deliveries" :bordered="false" />
-        </n-card>
-        <DownloadLinkPanel :token="downloadToken" :loading="linkLoading" :expired="linkExpired" :expires-at="downloadExpiresAt" :accepted="deliveryAccepted" :allow-create="false" @create="generateLink" @download="downloadArtifact" @accept="acceptDelivery" />
+        <DeliveryWorkspacePanel
+          :package-id="declaration.id"
+          :can-publish="auth.role === 'administrator'"
+          :can-accept="auth.role === 'participant'"
+          :accepted="deliveryAccepted"
+          @accepted="load"
+          @updated="load"
+        />
       </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed, h, onMounted, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { useRoute } from 'vue-router'
-import { NAlert, NButton, NCard, NDataTable, NInput, NTimeline, NTimelineItem, useMessage } from 'naive-ui'
+import { NAlert, NButton, NCard, NInput, NTimeline, NTimelineItem, useMessage } from 'naive-ui'
 
 import { declarationsApi } from '@/api/declarations'
-import { deliveriesApi } from '@/api/deliveries'
 import { extractApiError } from '@/api/client'
 import { useAuthStore } from '@/stores/auth'
 import DeadlineChip from '@/components/common/DeadlineChip.vue'
 import PageHeader from '@/components/common/PageHeader.vue'
 import StatusBadge from '@/components/common/StatusBadge.vue'
 import DeclarationStateActions from '@/components/declarations/DeclarationStateActions.vue'
-import DownloadLinkPanel from '@/components/deliveries/DownloadLinkPanel.vue'
+import DeliveryWorkspacePanel from '@/components/deliveries/DeliveryWorkspacePanel.vue'
 import VersionTimeline from '@/components/history/VersionTimeline.vue'
 import WhatChangedPanel from '@/components/history/WhatChangedPanel.vue'
 
@@ -78,13 +78,7 @@ const message = useMessage()
 const auth = useAuthStore()
 const declaration = ref<any | null>(null)
 const history = ref<any>({ versions: [], state_history: [] })
-const deliveries = ref<any[]>([])
 const corrections = ref<any[]>([])
-const downloadToken = ref('')
-const downloadExpiresAt = ref('')
-const linkLoading = ref(false)
-const bulkLoading = ref(false)
-const linkExpired = ref(false)
 const deliveryAccepted = ref(false)
 const correctionAcknowledged = ref(false)
 const resubmissionReason = ref('')
@@ -94,17 +88,10 @@ const voiding = ref(false)
 
 const activeCorrection = computed(() => corrections.value.find((item) => ['open', 'acknowledged', 'resubmitted'].includes(item.status)) || corrections.value[0] || null)
 
-const deliveryColumns = [
-  { title: 'Artifact', key: 'display_name' },
-  { title: 'Type', key: 'file_type' },
-  { title: 'Final', key: 'is_final', render: (row: any) => row.is_final ? 'Yes' : 'No' },
-]
-
 async function load() {
   const packageId = String(route.params.packageId)
   declaration.value = await declarationsApi.get(packageId)
   history.value = await declarationsApi.history(packageId)
-  deliveries.value = await deliveriesApi.list(packageId).catch(() => [])
   corrections.value = await declarationsApi.corrections(packageId).catch(() => [])
   deliveryAccepted.value = Boolean(declaration.value?.accepted_at)
   correctionAcknowledged.value = activeCorrection.value?.status === 'acknowledged'
@@ -143,36 +130,6 @@ async function resubmitFirstCorrection() {
   if (!activeCorrection.value) return message.warning('No correction request is available from this screen.')
   correctionAcknowledged.value = true
 }
-async function generateLink() {
-  if (!deliveries.value[0]) return
-  linkLoading.value = true
-  try {
-    const payload = await deliveriesApi.createLink(String(route.params.packageId), { delivery_file_id: deliveries.value[0].id })
-    downloadToken.value = payload.token
-    downloadExpiresAt.value = payload.expires_at
-    linkExpired.value = false
-  } catch (error) {
-    message.error(extractApiError(error))
-    linkExpired.value = true
-  } finally {
-    linkLoading.value = false
-  }
-}
-
-async function generateBulkLink() {
-  bulkLoading.value = true
-  try {
-    const payload = await deliveriesApi.bulkDownload(String(route.params.packageId))
-    downloadToken.value = payload.token
-    downloadExpiresAt.value = payload.expires_at
-    linkExpired.value = false
-    message.success('Bulk download bundle is ready.')
-  } catch (error) {
-    message.error(extractApiError(error))
-  } finally {
-    bulkLoading.value = false
-  }
-}
 
 async function acknowledgeCorrection() {
   if (!activeCorrection.value) return
@@ -193,34 +150,6 @@ async function resubmitCorrection() {
     correctionAcknowledged.value = false
     resubmissionReason.value = ''
     message.success('Correction resubmitted successfully.')
-    await load()
-  } catch (error) {
-    message.error(extractApiError(error))
-  }
-}
-
-async function downloadArtifact() {
-  if (!downloadToken.value || !auth.accessToken) return
-  try {
-    const response = await deliveriesApi.downloadByToken(downloadToken.value, auth.accessToken)
-    const blob = new Blob([response.data], { type: response.headers['content-type'] || 'application/octet-stream' })
-    const href = URL.createObjectURL(blob)
-    const link = document.createElement('a')
-    link.href = href
-    link.download = 'nutrideclare-download'
-    link.click()
-    URL.revokeObjectURL(href)
-  } catch (error) {
-    linkExpired.value = true
-    message.error(extractApiError(error))
-  }
-}
-
-async function acceptDelivery() {
-  try {
-    await deliveriesApi.accept(String(route.params.packageId), { confirmation_note: 'Accepted in participant portal', accepted_delivery_version: 'current' })
-    deliveryAccepted.value = true
-    message.success('Delivery accepted.')
     await load()
   } catch (error) {
     message.error(extractApiError(error))

@@ -2,6 +2,7 @@ import json
 
 from sqlalchemy import text
 
+from app.core.config import get_settings
 from app.core.constants import DeclarationState, NotificationSeverity, NotificationType, ReviewAssignmentStatus, Role, UserStatus
 from app.models.auth import PasswordHistory
 from app.models.declaration import DeclarationPackage, DeclarationStateHistory, PackageVersion, ReviewAssignment
@@ -84,16 +85,17 @@ def _ensure_audit_immutability_guards(db) -> None:
 def seed_demo_data(db):
     if db.query(User).count() > 0:
         return
+    settings = get_settings()
     EncryptionService().ensure_pgcrypto_extension(db)
     _ensure_audit_immutability_guards(db)
 
-    participant_password = hash_password("Participant#2026")
-    reviewer_password = hash_password("Reviewer#2026")
-    admin_password = hash_password("Admin#2026Secure")
+    participant_password = hash_password(settings.seed_participant_password)
+    reviewer_password = hash_password(settings.seed_reviewer_password)
+    admin_password = hash_password(settings.seed_admin_password)
 
-    participant = User(username="participant_demo", full_name="Pat Participant", email_optional="participant@example.local", role=Role.PARTICIPANT, status=UserStatus.ACTIVE, password_hash=participant_password, is_active=True)
-    reviewer = User(username="reviewer_demo", full_name="Riley Reviewer", email_optional="reviewer@example.local", role=Role.REVIEWER, status=UserStatus.ACTIVE, password_hash=reviewer_password, is_active=True)
-    admin = User(username="admin_demo", full_name="Avery Admin", email_optional="admin@example.local", role=Role.ADMINISTRATOR, status=UserStatus.ACTIVE, password_hash=admin_password, is_active=True)
+    participant = User(username=settings.seed_participant_username, full_name="Pat Participant", email_optional="participant@example.local", role=Role.PARTICIPANT, status=UserStatus.ACTIVE, password_hash=participant_password, is_active=True)
+    reviewer = User(username=settings.seed_reviewer_username, full_name="Riley Reviewer", email_optional="reviewer@example.local", role=Role.REVIEWER, status=UserStatus.ACTIVE, password_hash=reviewer_password, is_active=True)
+    admin = User(username=settings.seed_admin_username, full_name="Avery Admin", email_optional="admin@example.local", role=Role.ADMINISTRATOR, status=UserStatus.ACTIVE, password_hash=admin_password, is_active=True)
     db.add_all([participant, reviewer, admin])
     db.flush()
 
