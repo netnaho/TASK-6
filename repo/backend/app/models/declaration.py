@@ -30,8 +30,8 @@ class DeclarationPackage(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     review_due_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     current_review_assignment_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("review_assignments.id"), nullable=True)
 
-    versions: Mapped[list["PackageVersion"]] = relationship(back_populates="package", cascade="all, delete-orphan")
-    state_history: Mapped[list["DeclarationStateHistory"]] = relationship(back_populates="package", cascade="all, delete-orphan")
+    versions: Mapped[list["PackageVersion"]] = relationship(back_populates="package", cascade="all, delete-orphan", order_by=lambda: PackageVersion.version_number.desc())
+    state_history: Mapped[list["DeclarationStateHistory"]] = relationship(back_populates="package", cascade="all, delete-orphan", order_by=lambda: DeclarationStateHistory.changed_at.desc())
     correction_requests: Mapped[list["CorrectionRequest"]] = relationship(back_populates="package", cascade="all, delete-orphan")
     assignments: Mapped[list["ReviewAssignment"]] = relationship(back_populates="package", cascade="all, delete-orphan", foreign_keys="ReviewAssignment.package_id")
 

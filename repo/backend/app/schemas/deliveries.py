@@ -12,6 +12,7 @@ class DeliveryLinkRequest(BaseModel):
 
 
 class AcceptanceRequest(BaseModel):
+    delivery_file_id: uuid.UUID
     confirmation_note: str | None = None
     accepted_delivery_version: str | None = None
 

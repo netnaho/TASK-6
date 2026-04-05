@@ -1,5 +1,7 @@
 """Concurrency, replay, and idempotency risk coverage."""
 
+from io import BytesIO
+
 from API_tests.conftest import login_headers
 from app.models.declaration import CorrectionRequest
 from app.utils.datetime import add_hours
@@ -18,11 +20,20 @@ def test_double_submit_same_declaration_conflicts(client):
 
 def test_double_accept_delivery_is_not_500(client):
     headers = login_headers(client, "participant_demo", "Participant#2026")
+    reviewer_headers = login_headers(client, "reviewer_demo", "Reviewer#2026")
     package = client.get("/api/v1/declarations", headers=headers).json()["data"][0]
-    first = client.post(f"/api/v1/deliveries/{package['id']}/acceptance", json={"confirmation_note": "once", "accepted_delivery_version": "v1"}, headers=headers)
-    second = client.post(f"/api/v1/deliveries/{package['id']}/acceptance", json={"confirmation_note": "twice", "accepted_delivery_version": "v1"}, headers=headers)
+    upload = client.post(
+        f"/api/v1/deliveries/{package['id']}/files",
+        headers=reviewer_headers,
+        files={"upload": ("double-accept.txt", BytesIO(b"double accept"), "text/plain")},
+        data={"file_type": "revision_note", "is_final": "true"},
+    )
+    assert upload.status_code == 200
+    file_id = upload.json()["data"]["id"]
+    first = client.post(f"/api/v1/deliveries/{package['id']}/acceptance", json={"delivery_file_id": file_id, "confirmation_note": "once", "accepted_delivery_version": "uploaded"}, headers=headers)
+    second = client.post(f"/api/v1/deliveries/{package['id']}/acceptance", json={"delivery_file_id": file_id, "confirmation_note": "twice", "accepted_delivery_version": "uploaded"}, headers=headers)
     assert first.status_code == 200
-    assert second.status_code in {200, 409}
+    assert second.status_code == 409
 
 
 def test_refresh_token_replay_after_rotation_is_rejected(client):

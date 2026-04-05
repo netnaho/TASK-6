@@ -1,5 +1,6 @@
 from sqlalchemy import func, select
 
+from app.core.constants import ReviewAssignmentStatus
 from app.models.declaration import CorrectionRequest, DeclarationPackage, PackageVersion, ReviewAssignment
 from app.repositories.base import BaseRepository
 
@@ -24,7 +25,14 @@ class DeclarationRepository(BaseRepository):
         return int(count) + 1
 
     def queue_stmt_for_reviewer(self, reviewer_id):
-        return select(ReviewAssignment).where(ReviewAssignment.reviewer_id == reviewer_id).order_by(ReviewAssignment.review_due_at.asc())
+        return (
+            select(ReviewAssignment)
+            .where(
+                ReviewAssignment.reviewer_id == reviewer_id,
+                ReviewAssignment.status.in_([ReviewAssignmentStatus.QUEUED, ReviewAssignmentStatus.IN_REVIEW]),
+            )
+            .order_by(ReviewAssignment.review_due_at.asc())
+        )
 
     def list_queue_for_reviewer(self, reviewer_id):
         return self.list_scalars(self.queue_stmt_for_reviewer(reviewer_id))

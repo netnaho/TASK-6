@@ -29,7 +29,8 @@ async def lifespan(app: FastAPI):
     db = SessionLocal()
     try:
         EncryptionService().ensure_pgcrypto_extension(db)
-        seed_demo_data(db)
+        if settings.seed_demo_data:
+            seed_demo_data(db)
         db.commit()
     finally:
         db.close()

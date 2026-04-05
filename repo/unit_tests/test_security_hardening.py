@@ -4,19 +4,71 @@ import logging
 import pytest
 from fastapi.testclient import TestClient
 
-from app.core.config import DEFAULT_CAPTCHA_SECRET, DEFAULT_ENCRYPTION_KEY, DEFAULT_JWT_SECRET, Settings
+from app.core.config import (
+    DEFAULT_CAPTCHA_SECRET,
+    DEFAULT_ENCRYPTION_KEY,
+    DEFAULT_JWT_REFRESH_SECRET,
+    DEFAULT_JWT_SECRET,
+    DEFAULT_POSTGRES_PASSWORD,
+    DEFAULT_REFRESH_TOKEN_PEPPER,
+    Settings,
+)
 from app.core.logging import JsonFormatter
 from app.main import app
 
 
 def test_production_settings_reject_default_cryptographic_material():
-    with pytest.raises(RuntimeError):
-        Settings(environment="production", jwt_secret_key=DEFAULT_JWT_SECRET, captcha_secret=DEFAULT_CAPTCHA_SECRET, encryption_key=DEFAULT_ENCRYPTION_KEY)
+    with pytest.raises(RuntimeError) as exc_info:
+        Settings(
+            environment="production",
+            testing=False,
+            jwt_secret_key=DEFAULT_JWT_SECRET,
+            jwt_refresh_secret_key=DEFAULT_JWT_REFRESH_SECRET,
+            refresh_token_pepper=DEFAULT_REFRESH_TOKEN_PEPPER,
+            captcha_secret=DEFAULT_CAPTCHA_SECRET,
+            encryption_key=DEFAULT_ENCRYPTION_KEY,
+            postgres_password=DEFAULT_POSTGRES_PASSWORD,
+        )
+    assert "JWT_SECRET_KEY" in str(exc_info.value)
+    assert "JWT_REFRESH_SECRET_KEY" in str(exc_info.value)
+    assert "REFRESH_TOKEN_PEPPER" in str(exc_info.value)
+    assert "POSTGRES_PASSWORD" in str(exc_info.value)
 
 
-def test_dev_settings_allow_default_cryptographic_material():
-    settings = Settings(environment="dev", jwt_secret_key=DEFAULT_JWT_SECRET, captcha_secret=DEFAULT_CAPTCHA_SECRET, encryption_key=DEFAULT_ENCRYPTION_KEY)
-    assert settings.environment == "dev"
+def test_test_settings_allow_default_cryptographic_material():
+    settings = Settings(
+        environment="test",
+        testing=True,
+        seed_demo_data=True,
+        jwt_secret_key=DEFAULT_JWT_SECRET,
+        jwt_refresh_secret_key=DEFAULT_JWT_REFRESH_SECRET,
+        refresh_token_pepper=DEFAULT_REFRESH_TOKEN_PEPPER,
+        captcha_secret=DEFAULT_CAPTCHA_SECRET,
+        encryption_key=DEFAULT_ENCRYPTION_KEY,
+        postgres_password=DEFAULT_POSTGRES_PASSWORD,
+        seed_participant_password="Participant#2026",
+        seed_reviewer_password="Reviewer#2026",
+        seed_admin_password="Admin#2026Secure",
+    )
+    assert settings.testing is True
+
+
+def test_insecure_dev_mode_requires_explicit_override():
+    settings = Settings(
+        environment="development",
+        allow_insecure_dev_mode=True,
+        seed_demo_data=True,
+        jwt_secret_key=DEFAULT_JWT_SECRET,
+        jwt_refresh_secret_key=DEFAULT_JWT_REFRESH_SECRET,
+        refresh_token_pepper=DEFAULT_REFRESH_TOKEN_PEPPER,
+        captcha_secret=DEFAULT_CAPTCHA_SECRET,
+        encryption_key=DEFAULT_ENCRYPTION_KEY,
+        postgres_password=DEFAULT_POSTGRES_PASSWORD,
+        seed_participant_password="Participant#2026",
+        seed_reviewer_password="Reviewer#2026",
+        seed_admin_password="Admin#2026Secure",
+    )
+    assert settings.allow_insecure_dev_mode is True
 
 
 def test_structured_logs_redact_sensitive_values():

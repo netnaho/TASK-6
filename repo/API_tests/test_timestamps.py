@@ -11,11 +11,25 @@ from app.utils.datetime import add_hours
 
 def test_submission_assignment_and_acceptance_timestamps(client):
     participant_headers = login_headers(client, "participant_demo", "Participant#2026")
+    reviewer_headers = login_headers(client, "reviewer_demo", "Reviewer#2026")
     package = client.get("/api/v1/declarations", headers=participant_headers).json()["data"][0]
     assert package["submitted_at"] is not None
     assert package["review_due_at"] is not None
 
-    acceptance = client.post(f"/api/v1/deliveries/{package['id']}/acceptance", json={"confirmation_note": "Accept", "accepted_delivery_version": "v1"}, headers=participant_headers)
+    upload = client.post(
+        f"/api/v1/deliveries/{package['id']}/files",
+        headers=reviewer_headers,
+        files={"upload": ("timestamp-final.txt", BytesIO(b"timestamp final"), "text/plain")},
+        data={"file_type": "revision_note", "is_final": "true"},
+    )
+    assert upload.status_code == 200
+    file_id = upload.json()["data"]["id"]
+
+    acceptance = client.post(
+        f"/api/v1/deliveries/{package['id']}/acceptance",
+        json={"delivery_file_id": file_id, "confirmation_note": "Accept", "accepted_delivery_version": "uploaded"},
+        headers=participant_headers,
+    )
     assert acceptance.status_code == 200
     refreshed = client.get(f"/api/v1/declarations/{package['id']}", headers=participant_headers)
     assert refreshed.json()["data"]["accepted_at"] is not None

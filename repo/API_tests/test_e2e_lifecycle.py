@@ -99,13 +99,14 @@ def test_full_participant_reviewer_delivery_lifecycle(client):
 
     acceptance = client.post(
         f"/api/v1/deliveries/{package_id}/acceptance",
-        json={"confirmation_note": "Accepted end-to-end", "accepted_delivery_version": "v1"},
+        json={"delivery_file_id": file_id, "confirmation_note": "Accepted end-to-end", "accepted_delivery_version": "uploaded"},
         headers=participant_headers,
     )
     assert acceptance.status_code == 200
 
     history_after = client.get(f"/api/v1/declarations/{package_id}/history", headers=participant_headers).json()["data"]
     assert len(history_after["versions"]) > len(history_before["versions"])
+    assert history_after["versions"][0]["version_number"] > history_after["versions"][-1]["version_number"]
 
     notifications = client.get("/api/v1/notifications", headers=participant_headers)
     assert notifications.status_code == 200

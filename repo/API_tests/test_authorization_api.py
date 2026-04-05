@@ -127,10 +127,18 @@ def test_second_participant_cannot_view_first_participant_declaration(client):
 def test_second_participant_cannot_accept_first_participant_package(client):
     owner_headers = login_headers(client, "participant_demo", "Participant#2026")
     outsider_headers = register_participant(client, "participant_two")
+    admin_headers = login_headers(client, "admin_demo", "Admin#2026Secure")
     package_id = create_participant_declaration(client, owner_headers)
+    upload = client.post(
+        f"/api/v1/deliveries/{package_id}/files",
+        headers=admin_headers,
+        files={"upload": ("owner-final.txt", BytesIO(b"owner final"), "text/plain")},
+        data={"file_type": "revision_note", "is_final": "true"},
+    )
+    assert upload.status_code == 200
     response = client.post(
         f"/api/v1/deliveries/{package_id}/acceptance",
-        json={"confirmation_note": "Not mine", "accepted_delivery_version": "v1"},
+        json={"delivery_file_id": upload.json()["data"]["id"], "confirmation_note": "Not mine", "accepted_delivery_version": "uploaded"},
         headers=outsider_headers,
     )
     assert response.status_code == 403
@@ -406,24 +414,32 @@ def test_only_participant_owner_can_confirm_delivery_acceptance(client):
     package_id = create_participant_declaration(client, participant_headers)
     submitted = client.post(f"/api/v1/declarations/{package_id}/submit", json={}, headers=participant_headers)
     assert submitted.status_code == 200
+    upload = client.post(
+        f"/api/v1/deliveries/{package_id}/files",
+        headers=reviewer_headers,
+        files={"upload": ("acceptance-final.txt", BytesIO(b"acceptance final"), "text/plain")},
+        data={"file_type": "revision_note", "is_final": "true"},
+    )
+    assert upload.status_code == 200
+    file_id = upload.json()["data"]["id"]
 
     reviewer_attempt = client.post(
         f"/api/v1/deliveries/{package_id}/acceptance",
-        json={"confirmation_note": "Reviewer cannot accept", "accepted_delivery_version": "v1"},
+        json={"delivery_file_id": file_id, "confirmation_note": "Reviewer cannot accept", "accepted_delivery_version": "uploaded"},
         headers=reviewer_headers,
     )
     assert reviewer_attempt.status_code == 403
 
     admin_attempt = client.post(
         f"/api/v1/deliveries/{package_id}/acceptance",
-        json={"confirmation_note": "Admin cannot accept", "accepted_delivery_version": "v1"},
+        json={"delivery_file_id": file_id, "confirmation_note": "Admin cannot accept", "accepted_delivery_version": "uploaded"},
         headers=admin_headers,
     )
     assert admin_attempt.status_code == 403
 
     participant_attempt = client.post(
         f"/api/v1/deliveries/{package_id}/acceptance",
-        json={"confirmation_note": "Owner accepts", "accepted_delivery_version": "v1"},
+        json={"delivery_file_id": file_id, "confirmation_note": "Owner accepts", "accepted_delivery_version": "uploaded"},
         headers=participant_headers,
     )
     assert participant_attempt.status_code == 200

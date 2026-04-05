@@ -1,9 +1,8 @@
 from fastapi import APIRouter, Depends, Request
 
 from app.api.deps import DBSession, get_current_user, get_current_user_allow_force_change
-from app.core.config import get_settings
 from app.core.responses import success_response
-from app.schemas.auth import CaptchaResponse, ChangePasswordRequest, CompleteForcedPasswordChangeRequest, LoginRequest, RefreshRequest, RegisterRequest
+from app.schemas.auth import ChangePasswordRequest, CompleteForcedPasswordChangeRequest, LoginRequest, RefreshRequest, RegisterRequest
 from app.security.captcha import create_captcha_challenge
 from app.security.tokens import hash_refresh_token
 from app.services.auth_service import AuthService
@@ -62,7 +61,7 @@ def me(user=Depends(get_current_user_allow_force_change)):
 
 
 @router.get("/captcha/challenge")
-def captcha():
-    if not get_settings().enable_local_captcha:
+def captcha(db: DBSession):
+    if not AuthService(db).local_captcha_enabled():
         return success_response({"enabled": False})
     return success_response(create_captcha_challenge())

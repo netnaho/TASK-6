@@ -27,6 +27,7 @@ def test_profile_crud(client):
     assert history.status_code == 200
     rows = history.json()["data"]
     assert rows
+    assert rows[0]["version_number"] > rows[-1]["version_number"]
     for row in rows:
         _assert_iso_8601(row["created_at"])
 

@@ -44,6 +44,7 @@ class AcceptanceConfirmation(UUIDPrimaryKeyMixin, Base):
 
     package_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("declaration_packages.id", ondelete="CASCADE"), nullable=False, index=True)
     confirmed_by: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    delivery_file_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("delivery_files.id", ondelete="SET NULL"), nullable=True, index=True)
     confirmed_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     confirmation_note: Mapped[str | None] = mapped_column(Text, nullable=True)
     accepted_delivery_version: Mapped[str | None] = mapped_column(String(100), nullable=True)

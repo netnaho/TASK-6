@@ -3,7 +3,7 @@
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "$0")" && pwd)"
-DEFAULT_ENV_FILE="$ROOT_DIR/.compose.defaults.env"
+DEFAULT_ENV_FILE="$ROOT_DIR/.compose.test.env"
 TEST_DB_NAME="nutrideclare_test"
 COMPOSE_PROJECT_NAME="nutrideclare-tests"
 COMPOSE_FILES=(

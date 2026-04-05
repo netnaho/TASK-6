@@ -28,6 +28,10 @@ def test_reviewer_complete_review_happy_path_and_error_cases(client):
     assert completed.status_code == 200
     assert completed.json()["data"]["status"] == "completed"
 
+    queue = client.get("/api/v1/reviews/queue", headers=reviewer_headers)
+    assert queue.status_code == 200
+    assert all(item["package_id"] != package["id"] for item in queue.json()["data"])
+
     already_completed = client.post(f"/api/v1/reviews/{package['id']}/complete", json={"note": "Duplicate complete"}, headers=reviewer_headers)
     assert already_completed.status_code == 409
 

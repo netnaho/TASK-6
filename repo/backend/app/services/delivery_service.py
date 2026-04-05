@@ -295,21 +295,31 @@ class DeliveryService:
         self.db.commit()
         return file
 
-    def accept(self, user, package_id, note: str | None, delivery_version: str | None):
+    def accept(self, user, package_id, delivery_file_id, note: str | None, delivery_version: str | None):
         package = self.package_repo.get(package_id)
         if not package:
             raise NotFoundError("Package not found.")
         ensure_package_owner(user, package)
-        if package.state == DeclarationState.DRAFT and not self.repo.list_files(package_id):
+        if not self.repo.list_files(package_id):
             raise ConflictError("A delivery artifact is required before acceptance can be recorded.")
         if package.accepted_at is not None:
             raise ConflictError("Delivery acceptance has already been recorded.")
+        file = self.repo.get_file(delivery_file_id)
+        if not file or str(file.package_id) != str(package_id):
+            raise ConflictError("Acceptance must reference a delivery artifact for this package.")
+        if not file.is_final:
+            raise ConflictError("Acceptance must reference a final delivery artifact.")
+        if not self.files.exists(file.storage_path):
+            raise ConflictError("Acceptance must reference a stored delivery artifact.")
+        if delivery_version is not None and delivery_version != file.version_label:
+            raise ConflictError("Accepted delivery version does not match the referenced artifact.")
         confirmation = AcceptanceConfirmation(
             package_id=package_id,
             confirmed_by=user.id,
+            delivery_file_id=file.id,
             confirmed_at=utc_now(),
             confirmation_note=note,
-            accepted_delivery_version=delivery_version,
+            accepted_delivery_version=delivery_version or file.version_label,
         )
         package.accepted_at = utc_now()
         self.db.add(package)

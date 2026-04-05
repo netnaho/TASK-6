@@ -37,7 +37,7 @@ def bulk_download(package_id: str, db: DBSession, user=Depends(get_current_user)
 
 @router.post("/{package_id}/acceptance")
 def accept_delivery(package_id: str, payload: AcceptanceRequest, db: DBSession, user=Depends(require_roles(Role.PARTICIPANT))):
-    confirmation = DeliveryService(db).accept(user, package_id, payload.confirmation_note, payload.accepted_delivery_version)
+    confirmation = DeliveryService(db).accept(user, package_id, payload.delivery_file_id, payload.confirmation_note, payload.accepted_delivery_version)
     return success_response(confirmation, "Acceptance recorded")
 
 

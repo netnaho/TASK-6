@@ -83,9 +83,11 @@ def _ensure_audit_immutability_guards(db) -> None:
 
 
 def seed_demo_data(db):
+    settings = get_settings()
+    if not settings.seed_demo_data:
+        return
     if db.query(User).count() > 0:
         return
-    settings = get_settings()
     EncryptionService().ensure_pgcrypto_extension(db)
     _ensure_audit_immutability_guards(db)
 

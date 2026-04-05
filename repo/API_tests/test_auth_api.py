@@ -85,3 +85,40 @@ def test_refresh_is_rejected_for_disabled_user(client):
     assert disabled.status_code == 200
     refresh = client.post("/api/v1/auth/refresh", json={"refresh_token": login["refresh_token"]})
     assert refresh.status_code == 401
+
+
+def test_old_refresh_token_is_rejected_after_password_change(client):
+    login = client.post("/api/v1/auth/login", json={"username": "participant_demo", "password": "Participant#2026"})
+    assert login.status_code == 200
+    tokens = login.json()["data"]
+
+    changed = client.post(
+        "/api/v1/auth/change-password",
+        json={"current_password": "Participant#2026", "new_password": "Participant#2027"},
+        headers={"Authorization": f"Bearer {tokens['access_token']}"},
+    )
+    assert changed.status_code == 200
+
+    refresh = client.post("/api/v1/auth/refresh", json={"refresh_token": tokens["refresh_token"]})
+    assert refresh.status_code == 401
+
+    relogin = client.post("/api/v1/auth/login", json={"username": "participant_demo", "password": "Participant#2027"})
+    assert relogin.status_code == 200
+
+
+def test_runtime_setting_can_disable_captcha_enforcement(client, db_session):
+    admin_headers = login_headers(client, "admin_demo", "Admin#2026Secure")
+    user = db_session.query(User).filter(User.username == "participant_demo").one()
+    user.captcha_required = True
+    db_session.add(user)
+    db_session.commit()
+
+    update = client.put("/api/v1/admin/settings", json={"enable_local_captcha": False}, headers=admin_headers)
+    assert update.status_code == 200
+
+    challenge = client.get("/api/v1/auth/captcha/challenge")
+    assert challenge.status_code == 200
+    assert challenge.json()["data"]["enabled"] is False
+
+    login = client.post("/api/v1/auth/login", json={"username": "participant_demo", "password": "Participant#2026"})
+    assert login.status_code == 200

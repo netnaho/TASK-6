@@ -12,6 +12,7 @@ from app.security.captcha import verify_captcha
 from app.security.passwords import ensure_not_in_history, hash_password, validate_password_policy, verify_password
 from app.security.tokens import create_access_token, create_refresh_token, decode_refresh_token, hash_refresh_token
 from app.services.audit_service import AuditService
+from app.services.runtime_settings_service import RuntimeSettingsService
 from app.utils.datetime import add_minutes, utc_now
 
 
@@ -24,6 +25,10 @@ class AuthService:
         self.settings = get_settings()
         self.repo = UserRepository(db)
         self.audit = AuditService(db)
+        self.runtime_settings = RuntimeSettingsService(db)
+
+    def local_captcha_enabled(self) -> bool:
+        return bool(self.runtime_settings.get("enable_local_captcha", self.settings.enable_local_captcha))
 
     def register_participant(self, username: str, full_name: str, password: str, email_optional: str | None = None) -> User:
         if self.repo.get_by_username(username):
@@ -68,7 +73,7 @@ class AuthService:
             raise AuthenticationError("Invalid username or password.")
         self.ensure_user_active(user)
         self._check_lockout(user)
-        if self.settings.enable_local_captcha and user.captcha_required:
+        if self.local_captcha_enabled() and user.captcha_required:
             if not captcha_challenge_token or not captcha_answer:
                 raise ValidationError("CAPTCHA is required.", field="captcha")
             verify_captcha(captcha_challenge_token, captcha_answer)
@@ -133,6 +138,11 @@ class AuthService:
         hashes = [item.password_hash for item in self.repo.list_password_history(user.id)]
         ensure_not_in_history(new_password, hashes)
         new_hash = hash_password(new_password)
+        revoked_refresh_tokens = 0
+        for token in self.repo.list_active_refresh_tokens(user.id):
+            token.revoked_at = utc_now()
+            self.db.add(token)
+            revoked_refresh_tokens += 1
         user.password_hash = new_hash
         user.force_password_change = force_password_change
         self.db.add(user)
@@ -142,6 +152,7 @@ class AuthService:
             "forced": force_password_change,
             "target_user_id": str(user.id),
             "admin_initiated": actor_user is not None,
+            "revoked_refresh_sessions": revoked_refresh_tokens,
         }
         if actor_user is not None:
             metadata["admin_user_id"] = str(actor_user.id)
@@ -159,6 +170,7 @@ class AuthService:
                 "user_id": str(user.id),
                 "forced": force_password_change,
                 "admin_initiated": actor_user is not None,
+                "revoked_refresh_sessions": revoked_refresh_tokens,
             },
         )
         self.db.commit()

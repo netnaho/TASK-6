@@ -28,6 +28,7 @@ def test_plan_crud_and_versions(client):
     assert versions.status_code == 200
     version_rows = versions.json()["data"]
     assert len(version_rows) >= 2
+    assert version_rows[0]["version_number"] > version_rows[-1]["version_number"]
     for row in version_rows:
         _assert_iso_8601(row["created_at"])
 

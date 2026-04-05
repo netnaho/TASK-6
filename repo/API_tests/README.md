@@ -1,6 +1,6 @@
 # API Functional Test Plan
 
-API tests will validate the complete FastAPI workflow surface using seeded demo data and an isolated PostgreSQL test database.
+API tests validate the complete FastAPI workflow surface using an isolated PostgreSQL test database plus committed test-only credentials from `.compose.test.env`.
 
 Mandatory suites:
 - registration, login, and lockout

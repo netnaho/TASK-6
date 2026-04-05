@@ -27,6 +27,7 @@ class ParticipantProfile(UUIDPrimaryKeyMixin, TimestampMixin, Base):
         back_populates="profile",
         cascade="all, delete-orphan",
         foreign_keys="ParticipantProfileVersion.profile_id",
+        order_by=lambda: ParticipantProfileVersion.version_number.desc(),
     )
 
     @property

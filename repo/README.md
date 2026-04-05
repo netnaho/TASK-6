@@ -2,17 +2,31 @@
 
 NutriDeclare Offline Compliance System is an offline-first compliance platform for workplace wellness workflows. It supports participant, reviewer, and administrator roles with local authentication, guided health profiles, phased nutrition planning, declaration lifecycle control, corrections, deliveries, audit logging, import/export tooling, and in-process scheduled maintenance jobs.
 
-## Start Command
+## Startup
 
 ```bash
+cp .compose.example.env .compose.env
+# replace every placeholder with strong site-local secrets
 docker compose up --build
 ```
 
-`docker compose up --build` works out of the box with committed development defaults from `.compose.defaults.env`.
+`docker compose up --build` now requires a real `.compose.env`. The committed `.compose.example.env` is a template only and will not boot safely as-is.
 
-`init-db.sh` generates a local ignored `.compose.env` file with randomized database, crypto, and demo-account secrets that override those defaults. No manual editing is required.
+`init-db.sh` generates a local ignored `.compose.env` file with randomized database and cryptographic secrets. No manual editing is required for a secure local bootstrap.
 
-Run `./init-db.sh` before the first `docker compose up --build` only if you want randomized local secrets instead of the committed development defaults.
+Recommended secure local bootstrap:
+
+```bash
+./init-db.sh
+docker compose up --build
+```
+
+Optional disposable local demo bootstrap with randomized demo credentials:
+
+```bash
+./init-db.sh --with-demo-data
+docker compose up --build
+```
 
 If an older `.compose.env` triggers Compose warnings like `The "X" variable is not set`, regenerate it with `./init-db.sh --force` before starting a fresh stack. If PostgreSQL was already initialized with different credentials, recreate its data volume so the container and database passwords stay aligned.
 
@@ -23,12 +37,11 @@ If an older `.compose.env` triggers Compose warnings like `The "X" variable is n
 - Backend health: `http://localhost:8000/health`
 - PostgreSQL: `localhost:55432`
 
-## Demo Accounts
+## Local Demo Data
 
-- Usernames default to `participant_demo`, `reviewer_demo`, and `admin_demo`.
-- Without `./init-db.sh`, Compose uses the default demo passwords from `.compose.defaults.env`.
-- `./init-db.sh` writes randomized replacements to `.compose.env` on first initialization.
-- Re-run `./init-db.sh --force` to rotate the local bootstrap credentials and secrets.
+- Demo users are not seeded by default.
+- Run `./init-db.sh --with-demo-data` if you want randomized local demo accounts for manual walkthroughs.
+- Re-run `./init-db.sh --force --with-demo-data` to rotate those local demo credentials and secrets.
 
 ## Project Overview
 
@@ -70,7 +83,6 @@ If an older `.compose.env` triggers Compose warnings like `The "X" variable is n
 |-- frontend/
 |-- unit_tests/
 |-- API_tests/
-|-- docs/
 |-- docker-compose.yml
 |-- run_tests.sh
 `-- README.md
@@ -88,13 +100,13 @@ If an older `.compose.env` triggers Compose warnings like `The "X" variable is n
 ## Verification Steps
 
 ### 1. Verify startup
-- Run `docker compose up --build`
+- Provision a real `.compose.env` and run `docker compose up --build`
 - Open `http://localhost:4173`
 - Confirm the login page loads
 - Open `http://localhost:8000/health` and confirm `{"status":"ok"}`
 
 ### 2. Verify participant workflow
-- Sign in as `participant_demo`
+- Sign in with a provisioned participant account, or use the randomized local demo account from `./init-db.sh --with-demo-data`
 - Open Health Profile and save an update
 - Open Nutrition Plans and edit or create a plan version
 - Open Declarations and create or review a package
@@ -102,17 +114,17 @@ If an older `.compose.env` triggers Compose warnings like `The "X" variable is n
 - Open package detail and confirm status badge and due date display
 
 ### 3. Verify reviewer workflow
-- Sign in as `reviewer_demo`
+- Sign in with a provisioned reviewer account, or use the randomized local demo account from `./init-db.sh --with-demo-data`
 - Open Review Queue and confirm assigned packages are listed
 - Open a package and submit a correction request
 
 ### 4. Verify correction flow
-- Sign back in as `participant_demo`
+- Sign back in as the participant account you used above
 - Open the corrected declaration
 - Acknowledge and resubmit the correction
 
 ### 5. Verify administrator workflow
-- Sign in as `admin_demo`
+- Sign in with a provisioned administrator account, or use the randomized local demo account from `./init-db.sh --with-demo-data`
 - Open Users to disable or reset an account
 - Open Audit Trail to inspect immutable audit entries
 - Open Import & Export to create mappings, policies, and exports
@@ -132,7 +144,7 @@ Run the full unit and API suite with Docker Compose:
 ```
 
 The script:
-- uses a dedicated test Compose stack with committed defaults from `.compose.defaults.env`
+- uses a dedicated test Compose stack with committed test-only defaults from `.compose.test.env`
 - uses an isolated Compose project so local app containers and volumes do not interfere
 - starts PostgreSQL if needed
 - builds the current backend image before running tests
@@ -159,6 +171,8 @@ The script:
 ## Security Notes
 
 - authentication is fully local-only with no external identity providers
+- non-test startup fails fast unless strong runtime secrets are supplied
+- test/demo credentials are isolated to the dedicated test stack or explicit `--with-demo-data` bootstrap
 - sensitive profile fields are persisted through PostgreSQL `pgcrypto`-backed encrypted columns
 - passwords use Argon2id hashing
 - refresh tokens and download tokens are stored hashed

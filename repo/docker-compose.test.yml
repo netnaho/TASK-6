@@ -2,7 +2,7 @@ services:
   postgres:
     image: postgres:16-alpine
     env_file:
-      - .compose.defaults.env
+      - .compose.test.env
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
@@ -15,9 +15,9 @@ services:
     build:
       context: ./backend
     env_file:
-      - .compose.defaults.env
+      - .compose.test.env
     environment:
-      ENVIRONMENT: ${ENVIRONMENT:-development}
+      ENVIRONMENT: test
       POSTGRES_SERVER: postgres
       POSTGRES_PORT: 5432
       DB_ENCRYPTION_ENABLED: ${DB_ENCRYPTION_ENABLED:-true}

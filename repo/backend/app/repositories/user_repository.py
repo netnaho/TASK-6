@@ -19,5 +19,9 @@ class UserRepository(BaseRepository):
     def get_refresh_token(self, token_hash: str):
         return self.scalar_one_or_none(select(RefreshToken).where(RefreshToken.token_hash == token_hash))
 
+    def list_active_refresh_tokens(self, user_id):
+        stmt = select(RefreshToken).where(RefreshToken.user_id == user_id, RefreshToken.revoked_at.is_(None))
+        return self.list_scalars(stmt)
+
     def get_preferences(self, user_id):
         return self.scalar_one_or_none(select(NotificationPreference).where(NotificationPreference.user_id == user_id))

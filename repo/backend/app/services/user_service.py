@@ -1,5 +1,6 @@
 from app.core.constants import UserStatus
 from app.core.exceptions import NotFoundError
+from app.models.auth import PasswordHistory
 from app.models.user import NotificationPreference, User
 from app.repositories.user_repository import UserRepository
 from app.schemas.users import NotificationPreferencesUpdate
@@ -44,18 +45,20 @@ class UserService:
 
     def create_user(self, actor, payload):
         validate_password_policy(payload.password)
+        password_hash = hash_password(payload.password)
         user = User(
             username=payload.username,
             full_name=payload.full_name,
             email_optional=payload.email_optional,
             role=payload.role,
             status=UserStatus.ACTIVE,
-            password_hash=hash_password(payload.password),
+            password_hash=password_hash,
             is_active=True,
         )
         self.db.add(user)
         self.db.flush()
         self.db.add(NotificationPreference(user_id=user.id))
+        self.db.add(PasswordHistory(user_id=user.id, password_hash=password_hash, created_at=utc_now()))
         self.audit.log(actor_user_id=actor.id, action_type="admin_user_create", entity_type="user", entity_id=str(user.id), metadata={"role": user.role})
         self.db.commit()
         self.db.refresh(user)

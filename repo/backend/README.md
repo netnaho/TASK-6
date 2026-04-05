@@ -20,8 +20,9 @@ The backend is a FastAPI service under `backend/app/` that ships the offline com
 
 ## Running locally
 1. Install dependencies from `requirements.txt`.
-2. Provide PostgreSQL settings and encryption keys through environment variables.
-3. Run `uvicorn app.main:app --reload` from `backend/`.
+2. Provide PostgreSQL settings and strong runtime secrets through environment variables.
+3. Use `TESTING=true` only for automated tests, or `ALLOW_INSECURE_DEV_MODE=true` only for disposable local demos.
+4. Run `uvicorn app.main:app --reload` from `backend/`.
 
 ## Current boundaries
 - storage is local-disk backed; secure links are enforced through hashed download tokens plus file/package authorization

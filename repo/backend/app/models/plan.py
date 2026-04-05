@@ -23,6 +23,7 @@ class NutritionPlan(UUIDPrimaryKeyMixin, TimestampMixin, Base):
         back_populates="plan",
         cascade="all, delete-orphan",
         foreign_keys="NutritionPlanVersion.plan_id",
+        order_by=lambda: NutritionPlanVersion.version_number.desc(),
     )
 
 

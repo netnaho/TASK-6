@@ -1,6 +1,6 @@
 # Unit Test Plan
 
-Unit tests will cover core business rules without requiring full HTTP execution.
+Unit tests cover core business rules without requiring full HTTP execution and run against the isolated test configuration defined for `run_tests.sh`.
 
 Mandatory suites:
 - password policy
