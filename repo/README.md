@@ -4,29 +4,29 @@ NutriDeclare Offline Compliance System is an offline-first compliance platform f
 
 ## Startup
 
+Single-command startup from a fresh clone (no manual env file copying required):
+
+```bash
+./start.sh
+```
+
+`start.sh` automatically generates a local ignored `.compose.env` with randomized database and cryptographic secrets via `init-db.sh` when one is not already present, then runs `docker compose up --build`. Re-running `./start.sh` after bootstrap simply brings the stack up with the existing `.compose.env`.
+
+Optional disposable local demo bootstrap with randomized demo credentials on first run:
+
+```bash
+./start.sh --with-demo-data
+```
+
+Advanced manual bootstrap is still supported if you want full control over the env file:
+
 ```bash
 cp .compose.example.env .compose.env
 # replace every placeholder with strong site-local secrets
 docker compose up --build
 ```
 
-`docker compose up --build` now requires a real `.compose.env`. The committed `.compose.example.env` is a template only and will not boot safely as-is.
-
-`init-db.sh` generates a local ignored `.compose.env` file with randomized database and cryptographic secrets. No manual editing is required for a secure local bootstrap.
-
-Recommended secure local bootstrap:
-
-```bash
-./init-db.sh
-docker compose up --build
-```
-
-Optional disposable local demo bootstrap with randomized demo credentials:
-
-```bash
-./init-db.sh --with-demo-data
-docker compose up --build
-```
+`docker compose up --build` requires a real `.compose.env`. The committed `.compose.example.env` is a template only and will not boot safely as-is, which is why `./start.sh` is the recommended entry point.
 
 If an older `.compose.env` triggers Compose warnings like `The "X" variable is not set`, regenerate it with `./init-db.sh --force` before starting a fresh stack. If PostgreSQL was already initialized with different credentials, recreate its data volume so the container and database passwords stay aligned.
 
@@ -40,7 +40,7 @@ If an older `.compose.env` triggers Compose warnings like `The "X" variable is n
 ## Local Demo Data
 
 - Demo users are not seeded by default.
-- Run `./init-db.sh --with-demo-data` if you want randomized local demo accounts for manual walkthroughs.
+- Run `./start.sh --with-demo-data` (or the equivalent `./init-db.sh --with-demo-data`) if you want randomized local demo accounts for manual walkthroughs.
 - Re-run `./init-db.sh --force --with-demo-data` to rotate those local demo credentials and secrets.
 
 ## Project Overview
@@ -84,6 +84,7 @@ If an older `.compose.env` triggers Compose warnings like `The "X" variable is n
 |-- unit_tests/
 |-- API_tests/
 |-- docker-compose.yml
+|-- start.sh
 |-- run_tests.sh
 `-- README.md
 ```
@@ -100,7 +101,7 @@ If an older `.compose.env` triggers Compose warnings like `The "X" variable is n
 ## Verification Steps
 
 ### 1. Verify startup
-- Provision a real `.compose.env` and run `docker compose up --build`
+- Run `./start.sh` from a fresh clone (bootstraps `.compose.env` automatically on first run, then launches the stack)
 - Open `http://localhost:4173`
 - Confirm the login page loads
 - Open `http://localhost:8000/health` and confirm `{"status":"ok"}`
@@ -137,14 +138,14 @@ If an older `.compose.env` triggers Compose warnings like `The "X" variable is n
 
 ## How To Run Tests
 
-Run the full unit and API suite with Docker Compose:
+Run the full unit and API suite with Docker Compose in a single command from a fresh clone (no manual env file copying required):
 
 ```bash
 ./run_tests.sh
 ```
 
 The script:
-- uses a dedicated test Compose stack with committed test-only defaults from `.compose.test.env`
+- uses a dedicated test Compose stack with committed test-only defaults from the repository-tracked `.compose.test.env` file (no copy-paste required)
 - uses an isolated Compose project so local app containers and volumes do not interfere
 - starts PostgreSQL if needed
 - builds the current backend image before running tests
