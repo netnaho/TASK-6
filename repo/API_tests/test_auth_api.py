@@ -106,6 +106,70 @@ def test_old_refresh_token_is_rejected_after_password_change(client):
     assert relogin.status_code == 200
 
 
+def test_logout_revokes_refresh_token_and_blocks_further_refresh(client):
+    login = client.post(
+        "/api/v1/auth/login",
+        json={"username": "participant_demo", "password": "Participant#2026"},
+    )
+    assert login.status_code == 200
+    tokens = login.json()["data"]
+    headers = {"Authorization": f"Bearer {tokens['access_token']}"}
+
+    logout = client.post(
+        "/api/v1/auth/logout",
+        json={"refresh_token": tokens["refresh_token"]},
+        headers=headers,
+    )
+    assert logout.status_code == 200
+    body = logout.json()
+    assert body["success"] is True
+    assert body["message"] == "Logged out"
+
+    refreshed = client.post(
+        "/api/v1/auth/refresh",
+        json={"refresh_token": tokens["refresh_token"]},
+    )
+    assert refreshed.status_code == 401
+
+
+def test_logout_requires_authenticated_caller(client):
+    login = client.post(
+        "/api/v1/auth/login",
+        json={"username": "participant_demo", "password": "Participant#2026"},
+    ).json()["data"]
+
+    anon = client.post(
+        "/api/v1/auth/logout",
+        json={"refresh_token": login["refresh_token"]},
+    )
+    assert anon.status_code == 401
+
+
+def test_logout_rejects_malformed_bearer(client):
+    response = client.post(
+        "/api/v1/auth/logout",
+        json={"refresh_token": "any"},
+        headers={"Authorization": "Bearer not-a-jwt"},
+    )
+    assert response.status_code == 401
+
+
+def test_logout_with_unknown_refresh_token_still_succeeds_for_owner(client):
+    login = client.post(
+        "/api/v1/auth/login",
+        json={"username": "participant_demo", "password": "Participant#2026"},
+    ).json()["data"]
+    headers = {"Authorization": f"Bearer {login['access_token']}"}
+
+    response = client.post(
+        "/api/v1/auth/logout",
+        json={"refresh_token": "not-a-real-refresh-token"},
+        headers=headers,
+    )
+    assert response.status_code == 200
+    assert response.json()["message"] == "Logged out"
+
+
 def test_runtime_setting_can_disable_captcha_enforcement(client, db_session):
     admin_headers = login_headers(client, "admin_demo", "Admin#2026Secure")
     user = db_session.query(User).filter(User.username == "participant_demo").one()

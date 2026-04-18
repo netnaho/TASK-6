@@ -1,4 +1,4 @@
-import { createRouter, createWebHistory, type RouteRecordRaw } from 'vue-router'
+import { createRouter, createWebHistory, type NavigationGuard, type RouteRecordRaw } from 'vue-router'
 
 import { useAuthStore } from '@/stores/auth'
 
@@ -48,7 +48,7 @@ const router = createRouter({
   routes,
 })
 
-router.beforeEach(async (to) => {
+export const authNavigationGuard: NavigationGuard = async (to) => {
   const authStore = useAuthStore()
   if (!authStore.user && !authStore.bootstrapping) {
     await authStore.hydrate()
@@ -69,6 +69,8 @@ router.beforeEach(async (to) => {
   const allowedRoles = to.meta.roles as string[] | undefined
   if (allowedRoles && authStore.role && !allowedRoles.includes(authStore.role)) return '/unauthorized'
   return true
-})
+}
+
+router.beforeEach(authNavigationGuard)
 
 export default router

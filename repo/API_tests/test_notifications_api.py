@@ -85,6 +85,37 @@ def test_mentions_and_deadline_warning_notifications_are_produced(client):
     assert mention_notifications
 
 
+def test_mandatory_alerts_returns_only_mandatory_compliance_alerts(client):
+    headers = login_headers(client, "participant_demo", "Participant#2026")
+    response = client.get("/api/v1/notifications/mandatory-alerts", headers=headers)
+    assert response.status_code == 200
+    body = response.json()
+    assert body["success"] is True
+    alerts = body["data"]
+    assert isinstance(alerts, list)
+    assert alerts, "seeded participant should have at least one mandatory compliance alert"
+    for alert in alerts:
+        assert alert["type"] == "mandatory_compliance_alert"
+        assert alert["severity"] == "critical"
+        assert alert["is_muted_snapshot"] is False
+        assert alert["title"]
+        assert alert["message"]
+
+
+def test_mandatory_alerts_requires_authentication(client):
+    response = client.get("/api/v1/notifications/mandatory-alerts")
+    assert response.status_code == 401
+
+
+def test_mandatory_alerts_scoped_to_caller(client):
+    reviewer_headers = login_headers(client, "reviewer_demo", "Reviewer#2026")
+    response = client.get("/api/v1/notifications/mandatory-alerts", headers=reviewer_headers)
+    assert response.status_code == 200
+    body = response.json()
+    assert body["success"] is True
+    assert body["data"] == []
+
+
 def test_submission_can_create_reviewer_deadline_warning_for_short_sla(client):
     admin_headers = login_headers(client, "admin_demo", "Admin#2026Secure")
     participant_headers = login_headers(client, "participant_demo", "Participant#2026")
