@@ -44,6 +44,8 @@ For local installs that behave like a real deployment — randomized secrets, no
 
 `./start.sh` auto-generates a local gitignored `.compose.env` with randomized database, JWT, refresh, CAPTCHA, and encryption secrets via `./init-db.sh`, then runs `docker compose up --build`. Re-running it simply brings the stack up against the existing `.compose.env`.
 
+A plain `docker compose up` against `docker-compose.yml` also works out of the box on any fresh clone or CI runner: the main Compose file loads the committed `.compose.demo.env` as a baseline (marked `required: false`) and, when present, overlays the locally generated `.compose.env` on top. On a machine without `.compose.env`, only the demo baseline loads, so the stack boots in the same insecure demo mode as the deterministic demo stack above. On a machine where `./start.sh` has been run, `.compose.env` takes precedence and its randomized production-grade secrets override the demo values.
+
 To seed randomized demo accounts on first boot in this mode:
 
 ```bash

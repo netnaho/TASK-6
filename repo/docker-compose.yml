@@ -4,7 +4,10 @@ services:
   postgres:
     image: postgres:16-alpine
     env_file:
-      - .compose.env
+      - path: .compose.demo.env
+        required: false
+      - path: .compose.env
+        required: false
     ports:
       - "55432:5432"
     volumes:
@@ -19,7 +22,10 @@ services:
     build:
       context: ./backend
     env_file:
-      - .compose.env
+      - path: .compose.demo.env
+        required: false
+      - path: .compose.env
+        required: false
     environment:
       ENVIRONMENT: ${ENVIRONMENT:-development}
       POSTGRES_SERVER: postgres
